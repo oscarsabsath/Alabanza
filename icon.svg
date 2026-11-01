@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#172554"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="210" fill="none" stroke="url(#gold)" stroke-width="6" opacity="0.25"/>
+  <!-- Open Hymnal Book -->
+  <path d="M104 168 C156 148, 212 156, 256 184 C300 156, 356 148, 408 168 L408 368 C356 348, 300 356, 256 384 C212 356, 156 348, 104 368 Z" fill="none" stroke="url(#gold)" stroke-width="20" stroke-linejoin="round"/>
+  <line x1="256" y1="184" x2="256" y2="384" stroke="url(#gold)" stroke-width="16" stroke-linecap="round"/>
+  <!-- Lines on left page -->
+  <line x1="138" y1="220" x2="222" y2="232" stroke="#f8fafc" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+  <line x1="138" y1="262" x2="222" y2="274" stroke="#f8fafc" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+  <line x1="138" y1="304" x2="206" y2="314" stroke="#f8fafc" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+  <!-- Musical Note on right page / above -->
+  <path d="M316 124 L316 276" stroke="url(#gold)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M316 124 C350 132, 378 152, 372 184 C366 164, 344 152, 316 148 Z" fill="url(#gold)"/>
+  <ellipse cx="298" cy="282" rx="28" ry="20" transform="rotate(-18 298 282)" fill="url(#gold)"/>
+  <!-- Subtle Cross at top -->
+  <line x1="200" y1="92" x2="200" y2="144" stroke="url(#gold)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="178" y1="110" x2="222" y2="110" stroke="url(#gold)" stroke-width="12" stroke-linecap="round"/>
+</svg>

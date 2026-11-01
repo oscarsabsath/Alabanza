@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1120" id="meta-theme-color" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Himnario 2009" />
+  <meta name="description" content="Director de Canto - Himnario Adventista 2009 (613 himnos). Búsqueda por letra y número, creación de listas de alabanza, Modo Púlpito y exportación/importación offline." />
+  <title>Director de Canto · Himnario Adventista 2009</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand" id="brand-home" style="cursor:pointer" title="Ir al Himnario">
+        <img src="./icon.svg" alt="Himnario 2009" class="brand-icon" />
+        <div class="brand-text">
+          <h1>Director de Canto</h1>
+          <p id="active-list-subtitle">Himnario Adventista 2009 · 613 Himnos</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="icon-btn accent" id="btn-open-dialer" title="Ir a un número de himno (1-613)">
+          <span>#123</span>
+        </button>
+        <button type="button" class="icon-btn" id="btn-toggle-theme" title="Cambiar modo oscuro / claro">
+          <span id="theme-icon">☀️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- VIEW 1: HIMNARIO (SEARCH BY NUMBER, TITLE OR LYRICS) -->
+    <main id="view-search" class="view-section active">
+      <div class="search-panel">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            type="search"
+            id="search-input"
+            class="search-input"
+            placeholder="Buscar por # (1-613), título o frase de la letra..."
+            autocomplete="off"
+          />
+          <button type="button" id="btn-clear-search" class="clear-search-btn" title="Limpiar búsqueda">✕</button>
+        </div>
+        <div class="filter-row">
+          <select id="category-filter" class="category-select" aria-label="Filtrar por categoría">
+            <option value="">📚 Todas las categorías (1–613)</option>
+          </select>
+          <button type="button" id="btn-filter-favs" class="chip-btn">
+            <span>★ Favoritos</span>
+          </button>
+          <button type="button" id="btn-filter-inlist" class="chip-btn">
+            <span>🎵 En mi lista</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="results-meta">
+        <span id="results-count">Cargando 613 himnos...</span>
+        <span id="active-list-indicator"></span>
+      </div>
+
+      <div id="hymn-results-list" class="hymn-list"></div>
+    </main>
+
+    <!-- VIEW 2: MI LISTA DE ALABANZA (SONG DIRECTOR PLAYLIST) -->
+    <section id="view-list" class="view-section">
+      <div class="list-header-card">
+        <div class="list-selector-row">
+          <select id="playlist-select" class="list-select" aria-label="Seleccionar lista de alabanza"></select>
+          <button type="button" class="icon-btn accent" id="btn-new-playlist" title="Crear nueva lista">+ Nueva</button>
+          <button type="button" class="icon-btn" id="btn-delete-playlist" title="Eliminar esta lista">🗑️</button>
+        </div>
+
+        <div class="list-meta-inputs">
+          <input
+            type="text"
+            id="playlist-name-input"
+            class="text-input"
+            placeholder="Nombre de la lista (ej. Alabanza Sábado)"
+          />
+          <input
+            type="date"
+            id="playlist-date-input"
+            class="text-input"
+            aria-label="Fecha de la alabanza"
+          />
+        </div>
+
+        <div class="list-cta-bar">
+          <button type="button" class="btn-primary" id="btn-start-pulpit">
+            <span>🎤 Iniciar Modo Púlpito</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btn-go-share">
+            <span>📤 Exportar / Compartir</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btn-add-more-hymns">
+            <span>+ Agregar Himnos</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="playlist-items-container" class="playlist-items"></div>
+    </section>
+
+    <!-- VIEW 3: MODO PÚLPITO / LECTOR DE HIMNO -->
+    <section id="view-reader" class="view-section">
+      <!-- Active Playlist Quick Bar -->
+      <div id="pulpit-playlist-bar" class="pulpit-playlist-bar">
+        <div class="pulpit-playlist-header">
+          <span id="pulpit-list-title">Lista Activa</span>
+          <span id="pulpit-step-counter"></span>
+        </div>
+        <div id="pulpit-pills-container" class="pulpit-pills"></div>
+      </div>
+
+      <!-- Reader Controls Toolbar -->
+      <div class="reader-toolbar">
+        <div class="font-controls">
+          <button type="button" class="icon-btn" id="btn-font-dec" title="Reducir letra">A−</button>
+          <button type="button" class="icon-btn" id="btn-font-inc" title="Aumentar letra">A+</button>
+          <button type="button" class="chip-btn active" id="btn-repeat-chorus" title="Repetir el coro debajo de cada estrofa">
+            <span>🔄 Coro x Estrofa</span>
+          </button>
+        </div>
+        <div class="font-controls">
+          <button type="button" class="icon-btn" id="btn-reader-fav" title="Marcar como favorito">☆</button>
+          <button type="button" class="add-list-btn" id="btn-reader-toggle-list">+ Lista</button>
+        </div>
+      </div>
+
+      <!-- Hymn Lyrics Card -->
+      <article id="reader-card" class="reader-card">
+        <div class="reader-hymn-header">
+          <div class="reader-badge-row">
+            <span id="reader-hymn-num" class="reader-hymn-num">Himno #1</span>
+            <span id="reader-hymn-cat" style="font-size:0.78rem;color:var(--text-muted);font-weight:600"></span>
+          </div>
+          <h2 id="reader-hymn-title" class="reader-hymn-title">¡Cantad alegres al Señor!</h2>
+          <div class="reader-hymn-meta">
+            <span id="reader-hymn-bible">📖 Salmos 100:1-5</span>
+          </div>
+          <div id="reader-director-note" class="director-note-banner" style="display:none"></div>
+        </div>
+
+        <div id="reader-lyrics-body" class="lyrics-body"></div>
+
+        <!-- Prev / Next Hymn in Playlist or Hymnal -->
+        <div class="pulpit-bottom-nav">
+          <button type="button" class="btn-secondary" id="btn-prev-hymn">◀ Anterior</button>
+          <button type="button" class="btn-primary" id="btn-next-hymn">Siguiente ▶</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- VIEW 4: EXPORTAR E IMPORTAR LISTA -->
+    <section id="view-share" class="view-section">
+      <!-- Export Card -->
+      <div class="share-card">
+        <h2>📤 Exportar mi lista para otro celular</h2>
+        <p>Envía tu lista de himnos elegidos por WhatsApp, enlace directo o código corto. El otro director o músico podrá importarla en 1 toque.</p>
+
+        <textarea id="export-text-preview" class="export-preview" readonly></textarea>
+
+        <div class="share-actions-grid">
+          <button type="button" class="btn-primary whatsapp-btn" id="btn-share-whatsapp">
+            <span>📲 WhatsApp</span>
+          </button>
+          <button type="button" class="btn-primary" id="btn-copy-export">
+            <span>📋 Copiar todo</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btn-native-share">
+            <span>🔗 Compartir...</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btn-download-json">
+            <span>💾 Archivo .json</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Import Card -->
+      <div class="share-card">
+        <h2>📥 Recibir e Importar lista en este celular</h2>
+        <p>Pega aquí el mensaje de WhatsApp recibido, el código <code>HA09:...</code> o incluso una lista de números (ej. <code>14, 105, 312</code>):</p>
+
+        <textarea
+          id="import-text-input"
+          class="export-preview"
+          placeholder="Pega aquí el mensaje o código recibido de otro director de canto..."
+          style="min-height:115px"
+        ></textarea>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;font-size:0.84rem;color:var(--text-secondary)">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="radio" name="import-mode" value="new" checked />
+            <span>Guardar como lista nueva</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="radio" name="import-mode" value="replace" />
+            <span>Reemplazar lista actual</span>
+          </label>
+        </div>
+
+        <div class="share-actions-grid">
+          <button type="button" class="btn-primary" id="btn-process-import">
+            <span>📥 Importar Lista Ahora</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btn-paste-clipboard">
+            <span>📋 Pegar del Portapapeles</span>
+          </button>
+          <label class="btn-secondary" style="cursor:pointer">
+            <span>📂 Subir archivo .json</span>
+            <input type="file" id="input-import-file" accept=".json,application/json" style="display:none" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Install Guide Card for Android & iOS -->
+      <div class="share-card">
+        <h2>📱 Cómo instalar esta App en tu Celular (100% Offline)</h2>
+        <p style="margin-bottom:8px">Todos tus cambios se guardan automáticamente en la memoria interna de tu teléfono:</p>
+        <ul style="font-size:0.84rem;color:var(--text-secondary);padding-left:18px;display:flex;flex-direction:column;gap:6px">
+          <li><strong>En Android (Chrome):</strong> Toca el menú <strong>⋮</strong> (arriba a la derecha) y selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</li>
+          <li><strong>En iPhone / iPad (Safari):</strong> Toca el botón <strong>Compartir (⬆️)</strong> en la barra inferior y elige <strong>"Agregar a inicio"</strong>.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <div class="bottom-nav-inner">
+      <button type="button" class="nav-tab active" data-target="view-search">
+        <span class="nav-icon">📖</span>
+        <span>Himnario</span>
+      </button>
+      <button type="button" class="nav-tab" data-target="view-list">
+        <span class="nav-icon">🎵</span>
+        <span>Mi Lista</span>
+        <span id="nav-list-badge" class="nav-badge" style="display:none">0</span>
+      </button>
+      <button type="button" class="nav-tab" data-target="view-reader">
+        <span class="nav-icon">🎤</span>
+        <span>Modo Púlpito</span>
+      </button>
+      <button type="button" class="nav-tab" data-target="view-share">
+        <span class="nav-icon">🔄</span>
+        <span>Compartir</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Quick Number Dialer Modal (#1 - #613) -->
+  <div id="dialer-modal-backdrop" class="modal-backdrop">
+    <div class="dialer-modal" role="dialog" aria-label="Ir al número de himno">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <strong style="font-size:0.95rem">Ir al Himno # (1–613)</strong>
+        <button type="button" class="mini-btn" id="btn-close-dialer">✕</button>
+      </div>
+      <div class="dialer-display">
+        <div id="dialer-number" class="dialer-number">#_</div>
+        <div id="dialer-preview-title" class="dialer-preview-title">Digita un número del 1 al 613</div>
+      </div>
+      <div class="dialer-grid">
+        <button type="button" class="dial-key" data-digit="1">1</button>
+        <button type="button" class="dial-key" data-digit="2">2</button>
+        <button type="button" class="dial-key" data-digit="3">3</button>
+        <button type="button" class="dial-key" data-digit="4">4</button>
+        <button type="button" class="dial-key" data-digit="5">5</button>
+        <button type="button" class="dial-key" data-digit="6">6</button>
+        <button type="button" class="dial-key" data-digit="7">7</button>
+        <button type="button" class="dial-key" data-digit="8">8</button>
+        <button type="button" class="dial-key" data-digit="9">9</button>
+        <button type="button" class="dial-key" data-action="clear" style="font-size:0.95rem;color:var(--danger)">Borrar</button>
+        <button type="button" class="dial-key" data-digit="0">0</button>
+        <button type="button" class="dial-key" data-action="back">⌫</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button type="button" class="btn-secondary" id="btn-dialer-add">+ A mi lista</button>
+        <button type="button" class="btn-primary" id="btn-dialer-open">Ver Letra ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Offline 613 Hymns Dataset & App Logic -->
+  <script src="./himnos-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

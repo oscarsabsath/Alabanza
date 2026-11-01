@@ -1,0 +1,20 @@
+{
+  "name": "Director de Canto - Himnario Adventista 2009",
+  "short_name": "Himnario 2009",
+  "description": "App para Director de Canto del Himnario Adventista 2009 (613 himnos). Busca por letra o número, crea listas de alabanza, Modo Púlpito y exporta/importa listas offline.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1120",
+  "theme_color": "#1e3a8a",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
