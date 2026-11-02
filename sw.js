@@ -1,4 +1,4 @@
-const CACHE_NAME = 'himnario-2009-director-v1';
+const CACHE_NAME = 'himnario-2009-director-v2';
 const ASSETS = [
   './',
   './index.html',

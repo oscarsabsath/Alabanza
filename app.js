@@ -170,7 +170,7 @@
   function populateCategorySelect() {
     const select = document.getElementById('category-filter');
     const categories = [];
-    const seen = new Set();
+    const seen = new Set(['Ingreso de Oficiantes', 'Recogida de Diezmos y Ofrendas']);
     for (const h of HYMNS) {
       if (h.cat && !seen.has(h.cat)) {
         seen.add(h.cat);
@@ -267,6 +267,11 @@
     const rawQuery = (input.value || '').trim();
     clearBtn.style.display = rawQuery ? 'flex' : 'none';
 
+    const btnOficiantes = document.getElementById('btn-filter-oficiantes');
+    const btnDiezmos = document.getElementById('btn-filter-diezmos');
+    if (btnOficiantes) btnOficiantes.classList.toggle('active', category === 'TAG:oficiantes');
+    if (btnDiezmos) btnDiezmos.classList.toggle('active', category === 'TAG:diezmos');
+
     const pl = getActivePlaylist();
     const inListSet = new Set(pl.items.map((item) => item.n));
     const favSet = new Set(state.favorites);
@@ -277,7 +282,13 @@
     const queryWords = normQuery ? normQuery.split(' ').filter(Boolean) : [];
 
     let filtered = HYMNS.filter((h) => {
-      if (category && h.cat !== category) return false;
+      if (category === 'TAG:oficiantes') {
+        if (!Array.isArray(h.tags) || !h.tags.includes('oficiantes')) return false;
+      } else if (category === 'TAG:diezmos') {
+        if (!Array.isArray(h.tags) || !h.tags.includes('diezmos')) return false;
+      } else if (category && h.cat !== category) {
+        return false;
+      }
       if (filterFavoritesOnly && !favSet.has(h.n)) return false;
       if (filterInListOnly && !inListSet.has(h.n)) return false;
 
@@ -297,7 +308,7 @@
       );
     });
 
-    // Sort results by relevance when searching
+    // Sort results by relevance when searching or filtering by special themes
     if (rawQuery) {
       filtered.sort((a, b) => {
         if (isNumericOnly) {
@@ -313,6 +324,20 @@
         const titleMatchA = queryWords.every((w) => a.normTitle.includes(w)) ? 0 : 1;
         const titleMatchB = queryWords.every((w) => b.normTitle.includes(w)) ? 0 : 1;
         if (titleMatchA !== titleMatchB) return titleMatchA - titleMatchB;
+        return a.n - b.n;
+      });
+    } else if (category === 'TAG:oficiantes') {
+      filtered.sort((a, b) => {
+        const primA = a.cat === 'Ingreso de Oficiantes' ? 0 : 1;
+        const primB = b.cat === 'Ingreso de Oficiantes' ? 0 : 1;
+        if (primA !== primB) return primA - primB;
+        return a.n - b.n;
+      });
+    } else if (category === 'TAG:diezmos') {
+      filtered.sort((a, b) => {
+        const primA = a.cat === 'Recogida de Diezmos y Ofrendas' ? 0 : 1;
+        const primB = b.cat === 'Recogida de Diezmos y Ofrendas' ? 0 : 1;
+        if (primA !== primB) return primA - primB;
         return a.n - b.n;
       });
     }
@@ -406,9 +431,16 @@
       saveState();
       showToast(`Quitado #${hymnNum} de "${pl.name}"`);
     } else {
+      const category = document.getElementById('category-filter')?.value || '';
+      let defaultNote = '';
+      if (category === 'TAG:oficiantes' || (hymn && hymn.cat === 'Ingreso de Oficiantes')) {
+        defaultNote = 'Ingreso de Oficiantes';
+      } else if (category === 'TAG:diezmos' || (hymn && hymn.cat === 'Recogida de Diezmos y Ofrendas')) {
+        defaultNote = 'Recogida de los Diezmos';
+      }
       pl.items.push({
         n: hymnNum,
-        note: '',
+        note: defaultNote,
         stanzas: []
       });
       saveState();
@@ -897,10 +929,29 @@
       searchInput.focus();
     });
 
-    document.getElementById('category-filter').addEventListener('change', () => {
+    const catSelect = document.getElementById('category-filter');
+    catSelect.addEventListener('change', () => {
       searchRenderLimit = 80;
       renderSearchResults();
     });
+
+    const btnOficiantes = document.getElementById('btn-filter-oficiantes');
+    if (btnOficiantes) {
+      btnOficiantes.addEventListener('click', () => {
+        catSelect.value = catSelect.value === 'TAG:oficiantes' ? '' : 'TAG:oficiantes';
+        searchRenderLimit = 80;
+        renderSearchResults();
+      });
+    }
+
+    const btnDiezmos = document.getElementById('btn-filter-diezmos');
+    if (btnDiezmos) {
+      btnDiezmos.addEventListener('click', () => {
+        catSelect.value = catSelect.value === 'TAG:diezmos' ? '' : 'TAG:diezmos';
+        searchRenderLimit = 80;
+        renderSearchResults();
+      });
+    }
 
     const favFilterBtn = document.getElementById('btn-filter-favs');
     favFilterBtn.addEventListener('click', () => {
