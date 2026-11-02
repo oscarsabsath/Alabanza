@@ -88,11 +88,15 @@
       <div id="hymn-results-list" class="hymn-list"></div>
     </main>
 
-    <!-- VIEW 2: MIS LISTAS (CULTO | ESCUELA SABÁTICA | SANTA CENA) -->
+    <!-- VIEW 2: MIS LISTAS (SERVICIO | CULTO | ESCUELA SABÁTICA | SANTA CENA) -->
     <section id="view-list" class="view-section">
-      <!-- 3 Fixed Service Tabs -->
+      <!-- 4 Fixed Service Tabs -->
       <div class="service-tabs-bar" role="tablist" aria-label="Listas de servicio">
-        <button type="button" class="service-tab-btn active" data-service-tab="pl-culto">
+        <button type="button" class="service-tab-btn active" data-service-tab="pl-servicio">
+          <span>🎤 Servicio</span>
+          <span class="service-tab-count" id="tab-count-list-servicio">0 himnos</span>
+        </button>
+        <button type="button" class="service-tab-btn" data-service-tab="pl-culto">
           <span>⛪ Culto</span>
           <span class="service-tab-count" id="tab-count-list-culto">0 himnos</span>
         </button>
@@ -145,9 +149,13 @@
 
     <!-- VIEW 3: MODO PÚLPITO / LECTOR DE HIMNO -->
     <section id="view-reader" class="view-section">
-      <!-- 3 Fixed Service Tabs inside Pulpit Mode -->
+      <!-- 4 Fixed Service Tabs inside Pulpit Mode -->
       <div class="service-tabs-bar" role="tablist" aria-label="Cambiar lista en Modo Púlpito">
-        <button type="button" class="service-tab-btn active" data-pulpit-service-tab="pl-culto">
+        <button type="button" class="service-tab-btn active" data-pulpit-service-tab="pl-servicio">
+          <span>🎤 Servicio</span>
+          <span class="service-tab-count" id="tab-count-pulpit-servicio">0</span>
+        </button>
+        <button type="button" class="service-tab-btn" data-pulpit-service-tab="pl-culto">
           <span>⛪ Culto</span>
           <span class="service-tab-count" id="tab-count-pulpit-culto">0</span>
         </button>
@@ -180,7 +188,8 @@
           </button>
           <button type="button" class="icon-btn" id="btn-reader-fav" title="Marcar como favorito">☆</button>
         </div>
-        <div class="font-controls" style="width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px">
+        <div class="font-controls" style="width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:4px">
+          <button type="button" class="add-list-btn" id="btn-reader-toggle-servicio" data-reader-list="pl-servicio">+ Servicio</button>
           <button type="button" class="add-list-btn" id="btn-reader-toggle-culto" data-reader-list="pl-culto">+ Culto</button>
           <button type="button" class="add-list-btn" id="btn-reader-toggle-escuela" data-reader-list="pl-escuela">+ Escuela</button>
           <button type="button" class="add-list-btn" id="btn-reader-toggle-santacena" data-reader-list="pl-santacena">+ Santa Cena</button>
@@ -216,19 +225,22 @@
       <!-- Export Card -->
       <div class="share-card">
         <h2>📤 Exportar para otro celular</h2>
-        <p>Elige si deseas exportar una sola lista o las 3 listas juntas (Culto, Escuela Sabática y Santa Cena):</p>
+        <p>Elige si deseas exportar una sola lista o todas las listas juntas (Servicio, Culto, Escuela Sabática y Santa Cena):</p>
 
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px">
           <button type="button" class="chip-btn active" data-export-scope="active" id="btn-export-scope-active" style="justify-content:center">
             <span>🎵 Pestaña Actual</span>
           </button>
           <button type="button" class="chip-btn" data-export-scope="all" id="btn-export-scope-all" style="justify-content:center">
-            <span>📦 Las 3 Listas Juntas</span>
+            <span>📦 Todas las Listas</span>
           </button>
         </div>
 
         <div class="service-tabs-bar" id="export-single-tab-selector" style="margin-bottom:12px">
-          <button type="button" class="service-tab-btn active" data-export-tab="pl-culto">
+          <button type="button" class="service-tab-btn active" data-export-tab="pl-servicio">
+            <span>🎤 Servicio</span>
+          </button>
+          <button type="button" class="service-tab-btn" data-export-tab="pl-culto">
             <span>⛪ Culto</span>
           </button>
           <button type="button" class="service-tab-btn" data-export-tab="pl-escuela">
@@ -273,6 +285,7 @@
           <span>Destino si es lista simple:</span>
           <select id="import-target-select" class="category-select" style="min-width:140px;height:34px">
             <option value="auto">Automático (según el código)</option>
+            <option value="pl-servicio">🎤 Servicio</option>
             <option value="pl-culto">⛪ Culto</option>
             <option value="pl-escuela">📘 Escuela Sabática</option>
             <option value="pl-santacena">🍷 Santa Cena</option>
@@ -353,7 +366,8 @@
         <button type="button" class="dial-key" data-digit="0">0</button>
         <button type="button" class="dial-key" data-action="back">⌫</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px">
+        <button type="button" class="add-list-btn" data-dialer-add="pl-servicio">+ Servicio</button>
         <button type="button" class="add-list-btn" data-dialer-add="pl-culto">+ Culto</button>
         <button type="button" class="add-list-btn" data-dialer-add="pl-escuela">+ Escuela</button>
         <button type="button" class="add-list-btn" data-dialer-add="pl-santacena">+ Santa Cena</button>

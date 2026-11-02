@@ -378,27 +378,27 @@ html, body {
 
 .hymn-card-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
   padding-top: 8px;
   border-top: 1px dashed var(--border);
 }
 
 .add-list-btn {
   min-height: 36px;
-  padding: 0 8px;
+  padding: 0 4px;
   border-radius: 9px;
   border: 1.5px solid var(--border);
   background: var(--bg-primary);
   color: var(--text-secondary);
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   cursor: pointer;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   transition: all 0.15s ease;
 }
 
@@ -412,11 +412,11 @@ html, body {
   color: var(--success);
 }
 
-/* 3 Service Tabs Bar (Culto | Escuela Sabática | Santa Cena) */
+/* 4 Service Tabs Bar (Servicio | Culto | Escuela Sabática | Santa Cena) */
 .service-tabs-bar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -426,13 +426,13 @@ html, body {
 }
 
 .service-tab-btn {
-  min-height: 44px;
-  padding: 6px 6px;
+  min-height: 46px;
+  padding: 5px 4px;
   border-radius: 10px;
   border: 1.5px solid transparent;
   background: var(--bg-primary);
   color: var(--text-secondary);
-  font-size: 0.79rem;
+  font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;

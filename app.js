@@ -5,6 +5,7 @@
   const LEGACY_KEY = 'ha2009_director_state_v1';
 
   const SERVICE_LISTS = [
+    { id: 'pl-servicio', name: 'Servicio', label: '🎤 Servicio', btnLabel: 'Servicio' },
     { id: 'pl-culto', name: 'Culto', label: '⛪ Culto', btnLabel: 'Culto' },
     { id: 'pl-escuela', name: 'Escuela Sabática', label: '📘 Escuela Sabática', btnLabel: 'Escuela' },
     { id: 'pl-santacena', name: 'Santa Cena', label: '🍷 Santa Cena', btnLabel: 'Santa Cena' }
@@ -33,8 +34,17 @@
       fontSize: 22,
       repeatChorus: true,
       favorites: [1, 61, 538],
-      activePlaylistId: 'pl-culto',
+      activePlaylistId: 'pl-servicio',
       playlists: [
+        {
+          id: 'pl-servicio',
+          name: 'Servicio',
+          date: today,
+          items: [
+            { n: 1, note: '1° Himno Servicio de Canto', stanzas: [] },
+            { n: 61, note: '2° Himno Servicio de Canto', stanzas: [] }
+          ]
+        },
         {
           id: 'pl-culto',
           name: 'Culto',
@@ -279,10 +289,15 @@
   }
 
   function updateGlobalBadges() {
+    const plServicio = getPlaylistById('pl-servicio');
     const plCulto = getPlaylistById('pl-culto');
     const plEscuela = getPlaylistById('pl-escuela');
     const plSantaCena = getPlaylistById('pl-santacena');
-    const totalCount = plCulto.items.length + plEscuela.items.length + plSantaCena.items.length;
+    const totalCount =
+      plServicio.items.length +
+      plCulto.items.length +
+      plEscuela.items.length +
+      plSantaCena.items.length;
 
     const badge = document.getElementById('nav-list-badge');
     if (badge) {
@@ -297,22 +312,24 @@
     const activePl = getActivePlaylist();
     const subtitle = document.getElementById('active-list-subtitle');
     if (subtitle) {
-      subtitle.textContent = `Culto (${plCulto.items.length}) · Escuela (${plEscuela.items.length}) · Sta. Cena (${plSantaCena.items.length})`;
+      subtitle.textContent = `Servicio (${plServicio.items.length}) · Culto (${plCulto.items.length}) · Escuela (${plEscuela.items.length}) · Sta. Cena (${plSantaCena.items.length})`;
     }
     const indicator = document.getElementById('active-list-indicator');
     if (indicator) {
       indicator.textContent = `Activa: ${activePl.name}`;
     }
 
-    // Update counts on the 3 Service Tabs in Mi Lista & Modo Púlpito
+    // Update counts on the 4 Service Tabs in Mi Lista & Modo Púlpito
     const setTabCount = (id, text) => {
       const el = document.getElementById(id);
       if (el) el.textContent = text;
     };
+    setTabCount('tab-count-list-servicio', `${plServicio.items.length} himno${plServicio.items.length === 1 ? '' : 's'}`);
     setTabCount('tab-count-list-culto', `${plCulto.items.length} himno${plCulto.items.length === 1 ? '' : 's'}`);
     setTabCount('tab-count-list-escuela', `${plEscuela.items.length} himno${plEscuela.items.length === 1 ? '' : 's'}`);
     setTabCount('tab-count-list-santacena', `${plSantaCena.items.length} himno${plSantaCena.items.length === 1 ? '' : 's'}`);
 
+    setTabCount('tab-count-pulpit-servicio', `${plServicio.items.length} himno${plServicio.items.length === 1 ? '' : 's'}`);
     setTabCount('tab-count-pulpit-culto', `${plCulto.items.length} himno${plCulto.items.length === 1 ? '' : 's'}`);
     setTabCount('tab-count-pulpit-escuela', `${plEscuela.items.length} himno${plEscuela.items.length === 1 ? '' : 's'}`);
     setTabCount('tab-count-pulpit-santacena', `${plSantaCena.items.length} himno${plSantaCena.items.length === 1 ? '' : 's'}`);
@@ -393,6 +410,7 @@
     if (btnApertura) btnApertura.classList.toggle('active', category === 'TAG:apertura');
     if (btnClausura) btnClausura.classList.toggle('active', category === 'TAG:clausura');
 
+    const servicioSet = new Set(getPlaylistById('pl-servicio').items.map((it) => it.n));
     const cultoSet = new Set(getPlaylistById('pl-culto').items.map((it) => it.n));
     const escuelaSet = new Set(getPlaylistById('pl-escuela').items.map((it) => it.n));
     const santaCenaSet = new Set(getPlaylistById('pl-santacena').items.map((it) => it.n));
@@ -413,6 +431,7 @@
       if (filterFavoritesOnly && !favSet.has(h.n)) return false;
       if (
         filterInListOnly &&
+        !servicioSet.has(h.n) &&
         !cultoSet.has(h.n) &&
         !escuelaSet.has(h.n) &&
         !santaCenaSet.has(h.n)
@@ -513,6 +532,7 @@
     const fragment = document.createDocumentFragment();
 
     for (const h of visibleItems) {
+      const inServicio = servicioSet.has(h.n);
       const inCulto = cultoSet.has(h.n);
       const inEscuela = escuelaSet.has(h.n);
       const inSantaCena = santaCenaSet.has(h.n);
@@ -547,6 +567,9 @@
           </div>
         </div>
         <div class="hymn-card-actions">
+          <button type="button" class="add-list-btn ${inServicio ? 'in-list' : ''}" data-toggle-hymn="${h.n}" data-target-list="pl-servicio">
+            ${inServicio ? '✓ Servicio' : '+ Servicio'}
+          </button>
           <button type="button" class="add-list-btn ${inCulto ? 'in-list' : ''}" data-toggle-hymn="${h.n}" data-target-list="pl-culto">
             ${inCulto ? '✓ Culto' : '+ Culto'}
           </button>
@@ -745,20 +768,26 @@
     document.getElementById('reader-hymn-title').textContent = hymn.t;
     document.getElementById('reader-hymn-bible').textContent = hymn.b ? `📖 ${hymn.b}` : '';
 
-    // Favorite & 3 List buttons (+ Culto, + Escuela, + Santa Cena)
+    // Favorite & 4 List buttons (+ Servicio, + Culto, + Escuela, + Santa Cena)
     const isFav = state.favorites.includes(hymn.n);
     const favBtn = document.getElementById('btn-reader-fav');
     favBtn.textContent = isFav ? '★' : '☆';
     favBtn.style.color = isFav ? 'var(--accent)' : 'var(--text-primary)';
 
+    const inServicio = getPlaylistById('pl-servicio').items.some((it) => it.n === hymn.n);
     const inCulto = getPlaylistById('pl-culto').items.some((it) => it.n === hymn.n);
     const inEscuela = getPlaylistById('pl-escuela').items.some((it) => it.n === hymn.n);
     const inSantaCena = getPlaylistById('pl-santacena').items.some((it) => it.n === hymn.n);
 
+    const btnServicio = document.getElementById('btn-reader-toggle-servicio');
     const btnCulto = document.getElementById('btn-reader-toggle-culto');
     const btnEscuela = document.getElementById('btn-reader-toggle-escuela');
     const btnSantaCena = document.getElementById('btn-reader-toggle-santacena');
 
+    if (btnServicio) {
+      btnServicio.className = `add-list-btn ${inServicio ? 'in-list' : ''}`;
+      btnServicio.textContent = inServicio ? '✓ Servicio' : '+ Servicio';
+    }
     if (btnCulto) {
       btnCulto.className = `add-list-btn ${inCulto ? 'in-list' : ''}`;
       btnCulto.textContent = inCulto ? '✓ Culto' : '+ Culto';
@@ -898,7 +927,14 @@
   }
 
   function formatSingleListLines(pl, lines) {
-    const icon = pl.id === 'pl-escuela' ? '📘' : pl.id === 'pl-santacena' ? '🍷' : '⛪';
+    const icon =
+      pl.id === 'pl-servicio'
+        ? '🎤'
+        : pl.id === 'pl-escuela'
+        ? '📘'
+        : pl.id === 'pl-santacena'
+        ? '🍷'
+        : '⛪';
     const datePart = pl.date ? ` (${pl.date})` : '';
     lines.push(`${icon} *${pl.name.toUpperCase()}${datePart}*`);
     if (pl.items.length === 0) {
@@ -1080,7 +1116,7 @@
       renderSearchResults();
       renderShareView();
       switchView('view-list');
-      showToast(`¡Se importaron las 3 listas (${totalHymns} himnos en total)!`);
+      showToast(`¡Se importaron las listas (${totalHymns} himnos en total)!`);
       return;
     }
 
@@ -1091,7 +1127,8 @@
       destId = imported.id;
     } else if (imported.name) {
       const normName = normalizeText(imported.name);
-      if (normName.includes('escuela')) destId = 'pl-escuela';
+      if (normName.includes('servicio')) destId = 'pl-servicio';
+      else if (normName.includes('escuela')) destId = 'pl-escuela';
       else if (normName.includes('santa') || normName.includes('cena')) destId = 'pl-santacena';
       else if (normName.includes('culto')) destId = 'pl-culto';
     }
@@ -1134,7 +1171,14 @@
     document.querySelectorAll('[data-dialer-add]').forEach((btn) => {
       const listId = btn.getAttribute('data-dialer-add');
       const pl = getPlaylistById(listId);
-      const shortName = listId === 'pl-escuela' ? 'Escuela' : listId === 'pl-santacena' ? 'Santa Cena' : 'Culto';
+      const shortName =
+        listId === 'pl-servicio'
+          ? 'Servicio'
+          : listId === 'pl-escuela'
+          ? 'Escuela'
+          : listId === 'pl-santacena'
+          ? 'Santa Cena'
+          : 'Culto';
       const inList = hymn && pl.items.some((it) => it.n === hymn.n);
       btn.className = `add-list-btn ${inList ? 'in-list' : ''}`;
       btn.textContent = inList ? `✓ ${shortName}` : `+ ${shortName}`;
