@@ -1,7 +1,14 @@
 (function () {
   'use strict';
 
-  const STORAGE_KEY = 'ha2009_director_state_v1';
+  const STORAGE_KEY = 'ha2009_director_state_v2';
+  const LEGACY_KEY = 'ha2009_director_state_v1';
+
+  const SERVICE_LISTS = [
+    { id: 'pl-culto', name: 'Culto', label: '⛪ Culto', btnLabel: 'Culto' },
+    { id: 'pl-escuela', name: 'Escuela Sabática', label: '📘 Escuela Sabática', btnLabel: 'Escuela' },
+    { id: 'pl-santacena', name: 'Santa Cena', label: '🍷 Santa Cena', btnLabel: 'Santa Cena' }
+  ];
 
   // In-memory catalog of all 613 hymns
   let HYMNS = [];
@@ -14,6 +21,7 @@
   let currentReaderHymnNum = 1;
   let searchRenderLimit = 80;
   let dialerDigits = '';
+  let exportScope = 'active'; // 'active' | 'all'
 
   // Persistent User State (saved in localStorage)
   let state = loadState();
@@ -25,35 +33,85 @@
       fontSize: 22,
       repeatChorus: true,
       favorites: [1, 61, 538],
-      activePlaylistId: 'pl-default',
+      activePlaylistId: 'pl-culto',
       playlists: [
         {
-          id: 'pl-default',
-          name: 'Alabanza Sábado',
+          id: 'pl-culto',
+          name: 'Culto',
           date: today,
           items: [
-            { n: 1, note: '1° Himno de Apertura', stanzas: [] },
-            { n: 61, note: '2° Himno de Adoración', stanzas: [] },
-            { n: 538, note: '3° Himno Inicial Culto', stanzas: [] }
+            { n: 22, note: 'Entrada de Oficiantes', stanzas: [] },
+            { n: 1, note: 'Apertura', stanzas: [] },
+            { n: 522, note: 'Recogida de Diezmos', stanzas: [] },
+            { n: 37, note: 'Clausura', stanzas: [] }
+          ]
+        },
+        {
+          id: 'pl-escuela',
+          name: 'Escuela Sabática',
+          date: today,
+          items: [
+            { n: 534, note: 'Apertura Escuela Sabática', stanzas: [] },
+            { n: 538, note: 'Himno del Sábado', stanzas: [] }
+          ]
+        },
+        {
+          id: 'pl-santacena',
+          name: 'Santa Cena',
+          date: today,
+          items: [
+            { n: 582, note: 'Rito de Humildad', stanzas: [] },
+            { n: 583, note: 'Cena del Señor', stanzas: [] },
+            { n: 586, note: 'Clausura Santa Cena', stanzas: [] }
           ]
         }
       ]
     };
   }
 
+  function ensureThreeFixedPlaylists(playlists, today) {
+    const map = new Map();
+    if (Array.isArray(playlists)) {
+      for (const p of playlists) {
+        if (p && p.id) map.set(p.id, p);
+      }
+      // Migrate legacy default playlist to pl-culto if present
+      if (!map.has('pl-culto') && playlists.length > 0) {
+        map.set('pl-culto', {
+          ...playlists[0],
+          id: 'pl-culto',
+          name: 'Culto'
+        });
+      }
+    }
+    return SERVICE_LISTS.map((svc) => {
+      const existing = map.get(svc.id);
+      return {
+        id: svc.id,
+        name: svc.name,
+        date: (existing && existing.date) || today,
+        items: existing && Array.isArray(existing.items) ? existing.items : []
+      };
+    });
+  }
+
   function loadState() {
+    const today = new Date().toISOString().slice(0, 10);
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY);
       if (!raw) return getDefaultState();
       const parsed = JSON.parse(raw);
       const def = getDefaultState();
+      const playlists = ensureThreeFixedPlaylists(parsed.playlists, today);
+      const validIds = new Set(SERVICE_LISTS.map((s) => s.id));
+      const activeId = validIds.has(parsed.activePlaylistId) ? parsed.activePlaylistId : 'pl-culto';
       return {
         theme: parsed.theme || def.theme,
         fontSize: Number(parsed.fontSize) || def.fontSize,
         repeatChorus: typeof parsed.repeatChorus === 'boolean' ? parsed.repeatChorus : def.repeatChorus,
         favorites: Array.isArray(parsed.favorites) ? parsed.favorites : def.favorites,
-        activePlaylistId: parsed.activePlaylistId || (parsed.playlists?.[0]?.id ?? def.activePlaylistId),
-        playlists: Array.isArray(parsed.playlists) && parsed.playlists.length > 0 ? parsed.playlists : def.playlists
+        activePlaylistId: activeId,
+        playlists
       };
     } catch (e) {
       return getDefaultState();
@@ -67,6 +125,13 @@
       console.error('Error guardando estado local:', e);
     }
     updateGlobalBadges();
+  }
+
+  function getPlaylistById(playlistId) {
+    return (
+      state.playlists.find((p) => p.id === playlistId) ||
+      state.playlists[0]
+    );
   }
 
   function getActivePlaylist() {
@@ -102,7 +167,6 @@
   function highlightText(originalText, queryWords) {
     if (!queryWords || queryWords.length === 0) return escapeHtml(originalText);
     const escaped = escapeHtml(originalText);
-    // Build accent-tolerant regex for each query word
     const charMap = {
       a: '[aáä]',
       e: '[eéë]',
@@ -162,6 +226,10 @@
     updateGlobalBadges();
     renderSearchResults();
     renderPlaylistView();
+    const pl = getActivePlaylist();
+    if (pl.items.length > 0) {
+      currentReaderHymnNum = pl.items[0].n;
+    }
     renderReaderView(currentReaderHymnNum);
     renderShareView();
     checkUrlImportParam();
@@ -175,7 +243,8 @@
       'Recogida de Diezmos',
       'Apertura',
       'Clausura',
-      'Doxología'
+      'Doxología',
+      'Santa Cena'
     ]);
     for (const h of HYMNS) {
       if (h.cat && !seen.has(h.cat)) {
@@ -210,25 +279,54 @@
   }
 
   function updateGlobalBadges() {
-    const pl = getActivePlaylist();
-    const count = pl.items.length;
+    const plCulto = getPlaylistById('pl-culto');
+    const plEscuela = getPlaylistById('pl-escuela');
+    const plSantaCena = getPlaylistById('pl-santacena');
+    const totalCount = plCulto.items.length + plEscuela.items.length + plSantaCena.items.length;
+
     const badge = document.getElementById('nav-list-badge');
     if (badge) {
-      if (count > 0) {
+      if (totalCount > 0) {
         badge.style.display = 'flex';
-        badge.textContent = String(count);
+        badge.textContent = String(totalCount);
       } else {
         badge.style.display = 'none';
       }
     }
+
+    const activePl = getActivePlaylist();
     const subtitle = document.getElementById('active-list-subtitle');
     if (subtitle) {
-      subtitle.textContent = `${pl.name} (${count} himno${count === 1 ? '' : 's'})`;
+      subtitle.textContent = `Culto (${plCulto.items.length}) · Escuela (${plEscuela.items.length}) · Sta. Cena (${plSantaCena.items.length})`;
     }
     const indicator = document.getElementById('active-list-indicator');
     if (indicator) {
-      indicator.textContent = `Lista activa: ${pl.name}`;
+      indicator.textContent = `Activa: ${activePl.name}`;
     }
+
+    // Update counts on the 3 Service Tabs in Mi Lista & Modo Púlpito
+    const setTabCount = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+    setTabCount('tab-count-list-culto', `${plCulto.items.length} himno${plCulto.items.length === 1 ? '' : 's'}`);
+    setTabCount('tab-count-list-escuela', `${plEscuela.items.length} himno${plEscuela.items.length === 1 ? '' : 's'}`);
+    setTabCount('tab-count-list-santacena', `${plSantaCena.items.length} himno${plSantaCena.items.length === 1 ? '' : 's'}`);
+
+    setTabCount('tab-count-pulpit-culto', `${plCulto.items.length} himno${plCulto.items.length === 1 ? '' : 's'}`);
+    setTabCount('tab-count-pulpit-escuela', `${plEscuela.items.length} himno${plEscuela.items.length === 1 ? '' : 's'}`);
+    setTabCount('tab-count-pulpit-santacena', `${plSantaCena.items.length} himno${plSantaCena.items.length === 1 ? '' : 's'}`);
+
+    // Highlight active service tab across views
+    document.querySelectorAll('[data-service-tab]').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-service-tab') === state.activePlaylistId);
+    });
+    document.querySelectorAll('[data-pulpit-service-tab]').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-pulpit-service-tab') === state.activePlaylistId);
+    });
+    document.querySelectorAll('[data-export-tab]').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-export-tab') === state.activePlaylistId);
+    });
   }
 
   // Switch active view tab
@@ -251,6 +349,19 @@
       renderShareView();
     }
     window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  function switchServiceTab(playlistId, jumpToFirstInReader) {
+    state.activePlaylistId = playlistId;
+    saveState();
+    const pl = getActivePlaylist();
+    if (jumpToFirstInReader && pl.items.length > 0) {
+      currentReaderHymnNum = pl.items[0].n;
+    }
+    if (currentView === 'view-list') renderPlaylistView();
+    if (currentView === 'view-reader') renderReaderView(currentReaderHymnNum);
+    if (currentView === 'view-search') renderSearchResults();
+    if (currentView === 'view-share') renderShareView();
   }
 
   // ==================== VIEW 1: SEARCH & BROWSE HYMNS ====================
@@ -282,8 +393,9 @@
     if (btnApertura) btnApertura.classList.toggle('active', category === 'TAG:apertura');
     if (btnClausura) btnClausura.classList.toggle('active', category === 'TAG:clausura');
 
-    const pl = getActivePlaylist();
-    const inListSet = new Set(pl.items.map((item) => item.n));
+    const cultoSet = new Set(getPlaylistById('pl-culto').items.map((it) => it.n));
+    const escuelaSet = new Set(getPlaylistById('pl-escuela').items.map((it) => it.n));
+    const santaCenaSet = new Set(getPlaylistById('pl-santacena').items.map((it) => it.n));
     const favSet = new Set(state.favorites);
 
     const cleanNumQuery = rawQuery.replace(/^#/, '').trim();
@@ -299,7 +411,14 @@
         return false;
       }
       if (filterFavoritesOnly && !favSet.has(h.n)) return false;
-      if (filterInListOnly && !inListSet.has(h.n)) return false;
+      if (
+        filterInListOnly &&
+        !cultoSet.has(h.n) &&
+        !escuelaSet.has(h.n) &&
+        !santaCenaSet.has(h.n)
+      ) {
+        return false;
+      }
 
       if (!rawQuery) return true;
 
@@ -307,7 +426,6 @@
         return String(h.n).includes(cleanNumQuery);
       }
 
-      // Check if query matches number + text or all query words in title or lyrics
       const numStr = String(h.n);
       return queryWords.every(
         (word) =>
@@ -329,7 +447,6 @@
           if (startsA !== startsB) return startsA - startsB;
           return a.n - b.n;
         }
-        // Title match prioritized over lyric-only match
         const titleMatchA = queryWords.every((w) => a.normTitle.includes(w)) ? 0 : 1;
         const titleMatchB = queryWords.every((w) => b.normTitle.includes(w)) ? 0 : 1;
         if (titleMatchA !== titleMatchB) return titleMatchA - titleMatchB;
@@ -363,6 +480,13 @@
         if (primA !== primB) return primA - primB;
         return a.n - b.n;
       });
+    } else if (category === 'TAG:santacena') {
+      filtered.sort((a, b) => {
+        const primA = a.cat === 'Santa Cena' ? 0 : 1;
+        const primB = b.cat === 'Santa Cena' ? 0 : 1;
+        if (primA !== primB) return primA - primB;
+        return a.n - b.n;
+      });
     }
 
     const countEl = document.getElementById('results-count');
@@ -389,8 +513,11 @@
     const fragment = document.createDocumentFragment();
 
     for (const h of visibleItems) {
-      const isInList = inListSet.has(h.n);
+      const inCulto = cultoSet.has(h.n);
+      const inEscuela = escuelaSet.has(h.n);
+      const inSantaCena = santaCenaSet.has(h.n);
       const isFav = favSet.has(h.n);
+
       const card = document.createElement('div');
       card.className = 'hymn-card';
 
@@ -420,8 +547,14 @@
           </div>
         </div>
         <div class="hymn-card-actions">
-          <button type="button" class="add-list-btn ${isInList ? 'in-list' : ''}" data-toggle-list="${h.n}">
-            ${isInList ? '✓ En lista' : '+ Lista'}
+          <button type="button" class="add-list-btn ${inCulto ? 'in-list' : ''}" data-toggle-hymn="${h.n}" data-target-list="pl-culto">
+            ${inCulto ? '✓ Culto' : '+ Culto'}
+          </button>
+          <button type="button" class="add-list-btn ${inEscuela ? 'in-list' : ''}" data-toggle-hymn="${h.n}" data-target-list="pl-escuela">
+            ${inEscuela ? '✓ Escuela' : '+ Escuela'}
+          </button>
+          <button type="button" class="add-list-btn ${inSantaCena ? 'in-list' : ''}" data-toggle-hymn="${h.n}" data-target-list="pl-santacena">
+            ${inSantaCena ? '✓ Santa Cena' : '+ Santa Cena'}
           </button>
         </div>
       `;
@@ -444,15 +577,16 @@
     container.appendChild(fragment);
   }
 
-  // Toggle hymn in active playlist
-  function toggleHymnInActivePlaylist(hymnNum) {
-    const pl = getActivePlaylist();
+  // Toggle hymn in a specific playlist ('pl-culto' | 'pl-escuela' | 'pl-santacena')
+  function toggleHymnInPlaylist(hymnNum, targetPlaylistId) {
+    const pl = getPlaylistById(targetPlaylistId || state.activePlaylistId);
+    state.activePlaylistId = pl.id;
     const idx = pl.items.findIndex((it) => it.n === hymnNum);
     const hymn = HYMN_BY_NUM.get(hymnNum);
     if (idx >= 0) {
       pl.items.splice(idx, 1);
       saveState();
-      showToast(`Quitado #${hymnNum} de "${pl.name}"`);
+      showToast(`Quitado #${hymnNum} de ${pl.name}`);
     } else {
       const category = document.getElementById('category-filter')?.value || '';
       let defaultNote = '';
@@ -466,6 +600,8 @@
         defaultNote = 'Clausura';
       } else if (category === 'TAG:doxologia' || (hymn && hymn.cat === 'Doxología')) {
         defaultNote = 'Doxología';
+      } else if (category === 'TAG:santacena' || (hymn && hymn.cat === 'Santa Cena')) {
+        defaultNote = 'Santa Cena';
       }
       pl.items.push({
         n: hymnNum,
@@ -473,29 +609,25 @@
         stanzas: []
       });
       saveState();
-      showToast(`Agregado #${hymnNum} (${hymn ? hymn.t : ''}) a "${pl.name}"`);
+      showToast(`Agregado #${hymnNum} a ${pl.name}`);
     }
     if (currentView === 'view-search') renderSearchResults();
     if (currentView === 'view-list') renderPlaylistView();
     if (currentView === 'view-reader') renderReaderView(currentReaderHymnNum);
     if (currentView === 'view-share') renderShareView();
+    updateDialerPreview();
   }
 
-  // ==================== VIEW 2: MI LISTA DE ALABANZA ====================
+  // ==================== VIEW 2: MIS LISTAS (CULTO | ESCUELA | SANTA CENA) ====================
   function renderPlaylistView() {
+    updateGlobalBadges();
     const pl = getActivePlaylist();
-    const select = document.getElementById('playlist-select');
-    select.innerHTML = '';
-    for (const p of state.playlists) {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = `${p.name} (${p.items.length})`;
-      if (p.id === pl.id) opt.selected = true;
-      select.appendChild(opt);
-    }
 
-    document.getElementById('playlist-name-input').value = pl.name || '';
-    document.getElementById('playlist-date-input').value = pl.date || '';
+    const nameInput = document.getElementById('playlist-name-input');
+    if (nameInput) nameInput.value = `Lista de ${pl.name}`;
+
+    const dateInput = document.getElementById('playlist-date-input');
+    if (dateInput) dateInput.value = pl.date || '';
 
     const container = document.getElementById('playlist-items-container');
     container.innerHTML = '';
@@ -504,8 +636,8 @@
       container.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">🎵</div>
-          <p><strong>Tu lista "${escapeHtml(pl.name)}" está vacía</strong></p>
-          <p style="font-size:0.84rem;margin-top:6px">Ve a la pestaña <strong>Himnario</strong> o usa el botón <strong>#123</strong> para elegir los himnos de tu próxima alabanza.</p>
+          <p><strong>Tu lista de "${escapeHtml(pl.name)}" está vacía</strong></p>
+          <p style="font-size:0.84rem;margin-top:6px">Ve a <strong>Himnario</strong> y toca el botón <strong>+ ${escapeHtml(pl.name === 'Escuela Sabática' ? 'Escuela' : pl.name)}</strong> en los himnos que elijas.</p>
         </div>
       `;
       return;
@@ -535,8 +667,8 @@
             <div class="hymn-info">
               <div class="hymn-title">${escapeHtml(hymn.t)}</div>
               <div class="hymn-sub">
-                <span>${hymn.s.length} estrofa${hymn.s.length === 1 ? '' : 's'}${hymn.c ? ' + Coro' : ''}</span>
-                ${hymn.b ? `<span>· 📖 ${escapeHtml(hymn.b)}</span>` : ''}
+                <span>${escapeHtml(hymn.cat)}</span>
+                <span>· ${hymn.s.length} estrofa${hymn.s.length === 1 ? '' : 's'}${hymn.c ? ' + Coro' : ''}</span>
               </div>
             </div>
           </div>
@@ -551,7 +683,7 @@
             type="text"
             class="note-input"
             data-note-idx="${index}"
-            placeholder="Nota (ej. 1° Himno Inicial, Tono Sol, Ofrenda...)"
+            placeholder="Momento / Nota (ej. Apertura, Entrada Oficiantes, Diezmos, Tono Sol...)"
             value="${escapeHtml(item.note || '')}"
           />
           <div class="stanza-toggles">
@@ -568,6 +700,7 @@
 
   // ==================== VIEW 3: MODO PÚLPITO / READER ====================
   function renderReaderView(hymnNum) {
+    updateGlobalBadges();
     const hymn = HYMN_BY_NUM.get(Number(hymnNum)) || HYMN_BY_NUM.get(1);
     if (!hymn) return;
     currentReaderHymnNum = hymn.n;
@@ -584,11 +717,11 @@
 
     if (pl.items.length > 0) {
       pulpitBar.style.display = 'block';
-      pulpitTitle.textContent = `🎵 ${pl.name}`;
+      pulpitTitle.textContent = `🎵 Lista de ${pl.name}`;
       pulpitCounter.textContent =
         playlistIdx >= 0
           ? `Himno ${playlistIdx + 1} de ${pl.items.length}`
-          : `${pl.items.length} en tu lista`;
+          : `${pl.items.length} en ${pl.name}`;
 
       pillsContainer.innerHTML = pl.items
         .map((it, idx) => {
@@ -600,7 +733,10 @@
         })
         .join('');
     } else {
-      pulpitBar.style.display = 'none';
+      pulpitBar.style.display = 'block';
+      pulpitTitle.textContent = `🎵 Lista de ${pl.name}`;
+      pulpitCounter.textContent = 'Vacía';
+      pillsContainer.innerHTML = `<span style="font-size:0.8rem;color:var(--text-muted)">Aún no hay himnos en ${escapeHtml(pl.name)}. Usa los botones de abajo para agregar.</span>`;
     }
 
     // Header info
@@ -609,15 +745,32 @@
     document.getElementById('reader-hymn-title').textContent = hymn.t;
     document.getElementById('reader-hymn-bible').textContent = hymn.b ? `📖 ${hymn.b}` : '';
 
-    // Favorite & In-List buttons
+    // Favorite & 3 List buttons (+ Culto, + Escuela, + Santa Cena)
     const isFav = state.favorites.includes(hymn.n);
     const favBtn = document.getElementById('btn-reader-fav');
     favBtn.textContent = isFav ? '★' : '☆';
     favBtn.style.color = isFav ? 'var(--accent)' : 'var(--text-primary)';
 
-    const listBtn = document.getElementById('btn-reader-toggle-list');
-    listBtn.className = `add-list-btn ${playlistItem ? 'in-list' : ''}`;
-    listBtn.textContent = playlistItem ? '✓ En lista' : '+ Lista';
+    const inCulto = getPlaylistById('pl-culto').items.some((it) => it.n === hymn.n);
+    const inEscuela = getPlaylistById('pl-escuela').items.some((it) => it.n === hymn.n);
+    const inSantaCena = getPlaylistById('pl-santacena').items.some((it) => it.n === hymn.n);
+
+    const btnCulto = document.getElementById('btn-reader-toggle-culto');
+    const btnEscuela = document.getElementById('btn-reader-toggle-escuela');
+    const btnSantaCena = document.getElementById('btn-reader-toggle-santacena');
+
+    if (btnCulto) {
+      btnCulto.className = `add-list-btn ${inCulto ? 'in-list' : ''}`;
+      btnCulto.textContent = inCulto ? '✓ Culto' : '+ Culto';
+    }
+    if (btnEscuela) {
+      btnEscuela.className = `add-list-btn ${inEscuela ? 'in-list' : ''}`;
+      btnEscuela.textContent = inEscuela ? '✓ Escuela' : '+ Escuela';
+    }
+    if (btnSantaCena) {
+      btnSantaCena.className = `add-list-btn ${inSantaCena ? 'in-list' : ''}`;
+      btnSantaCena.textContent = inSantaCena ? '✓ Santa Cena' : '+ Santa Cena';
+    }
 
     // Director Note Banner
     const noteBanner = document.getElementById('reader-director-note');
@@ -654,7 +807,6 @@
       `;
       lyricsBody.appendChild(stanzaEl);
 
-      // Show chorus either after 1st stanza (traditional) or after every stanza (Pulpit helper)
       const shouldShowChorus =
         hymn.c && (state.repeatChorus ? !isOmitted : idx === 0);
       if (shouldShowChorus) {
@@ -675,8 +827,8 @@
     if (playlistIdx >= 0 && pl.items.length > 1) {
       const prevItem = pl.items[(playlistIdx - 1 + pl.items.length) % pl.items.length];
       const nextItem = pl.items[(playlistIdx + 1) % pl.items.length];
-      prevBtn.textContent = `◀ Ant. en lista (#${prevItem.n})`;
-      nextBtn.textContent = `Sig. en lista (#${nextItem.n}) ▶`;
+      prevBtn.textContent = `◀ Ant. en ${pl.name} (#${prevItem.n})`;
+      nextBtn.textContent = `Sig. en ${pl.name} (#${nextItem.n}) ▶`;
     } else {
       const prevNum = hymn.n > 1 ? hymn.n - 1 : 613;
       const nextNum = hymn.n < 613 ? hymn.n + 1 : 1;
@@ -701,10 +853,35 @@
   }
 
   // ==================== VIEW 4: EXPORT & IMPORT PLAYLIST ====================
-  function encodePlaylistCode(pl) {
+  function encodeExportCode() {
+    if (exportScope === 'all') {
+      const payload = {
+        v: 2,
+        multi: true,
+        lists: state.playlists.map((pl) => ({
+          id: pl.id,
+          n: pl.name,
+          d: pl.date || '',
+          i: pl.items.map((it) => {
+            const entry = { n: it.n };
+            if (it.note) entry.m = it.note;
+            if (Array.isArray(it.stanzas) && it.stanzas.length > 0) entry.s = it.stanzas;
+            return entry;
+          })
+        }))
+      };
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+      return `HA09:${b64}`;
+    }
+
+    const pl = getActivePlaylist();
     const payload = {
-      v: 1,
-      n: pl.name || 'Alabanza',
+      v: 2,
+      id: pl.id,
+      n: pl.name || 'Culto',
       d: pl.date || '',
       i: pl.items.map((it) => {
         const entry = { n: it.n };
@@ -713,25 +890,19 @@
         return entry;
       })
     };
-    const jsonStr = JSON.stringify(payload);
-    const b64 = btoa(unescape(encodeURIComponent(jsonStr)))
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=+$/, '');
     return `HA09:${b64}`;
   }
 
-  function buildShareableMessage(pl) {
-    const code = encodePlaylistCode(pl);
+  function formatSingleListLines(pl, lines) {
+    const icon = pl.id === 'pl-escuela' ? '📘' : pl.id === 'pl-santacena' ? '🍷' : '⛪';
     const datePart = pl.date ? ` (${pl.date})` : '';
-    const lines = [
-      `🎵 *LISTA DE ALABANZA: ${pl.name}${datePart}*`,
-      `📖 _Himnario Adventista 2009_`,
-      ``
-    ];
-
+    lines.push(`${icon} *${pl.name.toUpperCase()}${datePart}*`);
     if (pl.items.length === 0) {
-      lines.push(`(Sin himnos seleccionados)`);
+      lines.push(`_(Sin himnos seleccionados)_`);
     } else {
       pl.items.forEach((it, idx) => {
         const h = HYMN_BY_NUM.get(it.n);
@@ -745,45 +916,86 @@
         lines.push(`${idx + 1}. *#${it.n}* - ${title}${extraStr}`);
       });
     }
+  }
+
+  function buildShareableMessage() {
+    const code = encodeExportCode();
+    const lines = [`🎵 *PROGRAMA DE ALABANZA · HIMNARIO 2009*`, ``];
+
+    if (exportScope === 'all') {
+      state.playlists.forEach((pl, idx) => {
+        if (idx > 0) lines.push(``);
+        formatSingleListLines(pl, lines);
+      });
+    } else {
+      formatSingleListLines(getActivePlaylist(), lines);
+    }
 
     lines.push(``);
     lines.push(`📲 *Código para importar en la App:*`);
     lines.push(code);
 
-    // If hosted on http/https, include direct 1-click import link
     if (window.location.protocol.startsWith('http')) {
       const baseUrl = window.location.origin + window.location.pathname;
       lines.push(``);
-      lines.push(`🔗 *Abrir directo:* ${baseUrl}?import=${encodeURIComponent(code)}`);
+      lines.push(`🔗 *Abrir e importar directo:* ${baseUrl}?import=${encodeURIComponent(code)}`);
     }
 
     return lines.join('\n');
   }
 
   function renderShareView() {
-    const pl = getActivePlaylist();
+    updateGlobalBadges();
+    const singleTabSelector = document.getElementById('export-single-tab-selector');
+    if (singleTabSelector) {
+      singleTabSelector.style.display = exportScope === 'all' ? 'none' : 'grid';
+    }
+    document.getElementById('btn-export-scope-active')?.classList.toggle('active', exportScope === 'active');
+    document.getElementById('btn-export-scope-all')?.classList.toggle('active', exportScope === 'all');
+
     const preview = document.getElementById('export-text-preview');
     if (preview) {
-      preview.value = buildShareableMessage(pl);
+      preview.value = buildShareableMessage();
     }
   }
 
-  function parseImportedPlaylist(rawInput) {
+  function parseImportedData(rawInput) {
     if (!rawInput || !rawInput.trim()) {
       throw new Error('Pega primero el mensaje o código de la lista.');
     }
     const text = rawInput.trim();
 
-    // 1. Check if it contains HA09:<base64> code (even inside a WhatsApp message or URL)
+    // 1. Check HA09:<base64> code
     const codeMatch = text.match(/HA09:([A-Za-z0-9\-_]+)/);
     if (codeMatch) {
       let b64 = codeMatch[1].replace(/-/g, '+').replace(/_/g, '/');
       while (b64.length % 4 !== 0) b64 += '=';
       const jsonStr = decodeURIComponent(escape(atob(b64)));
       const data = JSON.parse(jsonStr);
+
+      if (data && data.multi && Array.isArray(data.lists)) {
+        return {
+          multi: true,
+          lists: data.lists.map((l) => ({
+            id: l.id,
+            name: l.n,
+            date: l.d || new Date().toISOString().slice(0, 10),
+            items: (l.i || [])
+              .map((entry) => ({
+                n: Number(entry.n),
+                note: entry.m || '',
+                stanzas: Array.isArray(entry.s) ? entry.s.map(Number) : []
+              }))
+              .filter((it) => HYMN_BY_NUM.has(it.n))
+          }))
+        };
+      }
+
       if (data && Array.isArray(data.i)) {
         return {
-          name: data.n || 'Lista Importada',
+          multi: false,
+          id: data.id || null,
+          name: data.n || 'Culto',
           date: data.d || new Date().toISOString().slice(0, 10),
           items: data.i
             .map((entry) => ({
@@ -796,13 +1008,21 @@
       }
     }
 
-    // 2. Check if it's JSON (from .json export)
+    // 2. Check JSON file or object
     if (text.startsWith('{') || text.startsWith('[')) {
       try {
         const parsed = JSON.parse(text);
+        if (Array.isArray(parsed.playlists)) {
+          return {
+            multi: true,
+            lists: parsed.playlists
+          };
+        }
         if (Array.isArray(parsed.items)) {
           return {
-            name: parsed.name || 'Lista Importada',
+            multi: false,
+            id: parsed.id || null,
+            name: parsed.name || 'Culto',
             date: parsed.date || new Date().toISOString().slice(0, 10),
             items: parsed.items
               .map((it) => ({
@@ -814,11 +1034,11 @@
           };
         }
       } catch (e) {
-        // Continue to fallback number parser
+        // Fallback to plain numbers
       }
     }
 
-    // 3. Fallback: Extract hymn numbers from plain text / WhatsApp message (e.g. "#14, #105, #312" or "14, 105, 312")
+    // 3. Fallback: Extract hymn numbers from plain text
     const numMatches = text.match(/\b([1-9]\d{0,2})\b/g);
     if (numMatches) {
       const validNums = [];
@@ -832,6 +1052,8 @@
       }
       if (validNums.length > 0) {
         return {
+          multi: false,
+          id: null,
           name: 'Lista Importada',
           date: new Date().toISOString().slice(0, 10),
           items: validNums
@@ -839,36 +1061,52 @@
       }
     }
 
-    throw new Error('No se encontraron himnos válidos (1–613) ni un código HA09 en el texto.');
+    throw new Error('No se encontraron himnos válidos (1–613) ni un código HA09.');
   }
 
-  function applyImportedPlaylist(imported, mode) {
-    if (!imported || !Array.isArray(imported.items) || imported.items.length === 0) {
-      throw new Error('La lista importada no contiene himnos válidos.');
+  function applyImportedData(imported, targetOverride) {
+    if (imported.multi && Array.isArray(imported.lists)) {
+      let totalHymns = 0;
+      for (const l of imported.lists) {
+        const target = state.playlists.find((p) => p.id === l.id || p.name.toLowerCase() === (l.name || '').toLowerCase());
+        if (target && Array.isArray(l.items)) {
+          target.items = l.items;
+          if (l.date) target.date = l.date;
+          totalHymns += l.items.length;
+        }
+      }
+      saveState();
+      renderPlaylistView();
+      renderSearchResults();
+      renderShareView();
+      switchView('view-list');
+      showToast(`¡Se importaron las 3 listas (${totalHymns} himnos en total)!`);
+      return;
     }
 
-    if (mode === 'replace') {
-      const pl = getActivePlaylist();
-      pl.name = imported.name || pl.name;
-      pl.date = imported.date || pl.date;
-      pl.items = imported.items;
-    } else {
-      const newId = 'pl-' + Date.now();
-      state.playlists.unshift({
-        id: newId,
-        name: imported.name || 'Lista Recibida',
-        date: imported.date || new Date().toISOString().slice(0, 10),
-        items: imported.items
-      });
-      state.activePlaylistId = newId;
+    let destId = state.activePlaylistId;
+    if (targetOverride && targetOverride !== 'auto') {
+      destId = targetOverride;
+    } else if (imported.id && state.playlists.some((p) => p.id === imported.id)) {
+      destId = imported.id;
+    } else if (imported.name) {
+      const normName = normalizeText(imported.name);
+      if (normName.includes('escuela')) destId = 'pl-escuela';
+      else if (normName.includes('santa') || normName.includes('cena')) destId = 'pl-santacena';
+      else if (normName.includes('culto')) destId = 'pl-culto';
     }
+
+    const pl = getPlaylistById(destId);
+    pl.items = imported.items || [];
+    if (imported.date) pl.date = imported.date;
+    state.activePlaylistId = pl.id;
 
     saveState();
     renderPlaylistView();
     renderSearchResults();
     renderShareView();
     switchView('view-list');
-    showToast(`¡Lista "${imported.name}" importada (${imported.items.length} himnos)!`);
+    showToast(`¡Lista importada en "${pl.name}" (${pl.items.length} himnos)!`);
   }
 
   function checkUrlImportParam() {
@@ -876,11 +1114,10 @@
       const params = new URLSearchParams(window.location.search);
       const importParam = params.get('import');
       if (importParam) {
-        const imported = parseImportedPlaylist(importParam);
-        // Clean URL parameter without reloading
+        const imported = parseImportedData(importParam);
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
-        applyImportedPlaylist(imported, 'new');
+        applyImportedData(imported, 'auto');
       }
     } catch (e) {
       console.warn('No se pudo importar desde URL:', e);
@@ -891,14 +1128,25 @@
   function updateDialerPreview() {
     const numEl = document.getElementById('dialer-number');
     const titleEl = document.getElementById('dialer-preview-title');
+    const n = Number(dialerDigits);
+    const hymn = dialerDigits ? HYMN_BY_NUM.get(n) : null;
+
+    document.querySelectorAll('[data-dialer-add]').forEach((btn) => {
+      const listId = btn.getAttribute('data-dialer-add');
+      const pl = getPlaylistById(listId);
+      const shortName = listId === 'pl-escuela' ? 'Escuela' : listId === 'pl-santacena' ? 'Santa Cena' : 'Culto';
+      const inList = hymn && pl.items.some((it) => it.n === hymn.n);
+      btn.className = `add-list-btn ${inList ? 'in-list' : ''}`;
+      btn.textContent = inList ? `✓ ${shortName}` : `+ ${shortName}`;
+    });
+
     if (!dialerDigits) {
       numEl.textContent = '#_';
       titleEl.textContent = 'Digita un número del 1 al 613';
+      titleEl.style.color = 'var(--text-secondary)';
       return;
     }
-    const n = Number(dialerDigits);
     numEl.textContent = `#${n}`;
-    const hymn = HYMN_BY_NUM.get(n);
     if (hymn) {
       titleEl.textContent = hymn.t;
       titleEl.style.color = 'var(--accent)';
@@ -928,6 +1176,22 @@
       tab.addEventListener('click', () => {
         const target = tab.getAttribute('data-target');
         if (target) switchView(target);
+      });
+    });
+
+    // 3 Service Tabs in Mi Lista
+    document.querySelectorAll('[data-service-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.getAttribute('data-service-tab');
+        if (tabId) switchServiceTab(tabId, false);
+      });
+    });
+
+    // 3 Service Tabs in Modo Púlpito
+    document.querySelectorAll('[data-pulpit-service-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.getAttribute('data-pulpit-service-tab');
+        if (tabId) switchServiceTab(tabId, true);
       });
     });
 
@@ -1014,13 +1278,14 @@
       renderSearchResults();
     });
 
-    // Delegated clicks on Hymn Search Results
+    // Delegated clicks on Hymn Search Results (+ Culto | + Escuela | + Santa Cena)
     document.getElementById('hymn-results-list').addEventListener('click', (e) => {
-      const toggleBtn = e.target.closest('[data-toggle-list]');
+      const toggleBtn = e.target.closest('[data-toggle-hymn]');
       if (toggleBtn) {
         e.stopPropagation();
-        const num = Number(toggleBtn.getAttribute('data-toggle-list'));
-        toggleHymnInActivePlaylist(num);
+        const num = Number(toggleBtn.getAttribute('data-toggle-hymn'));
+        const targetList = toggleBtn.getAttribute('data-target-list');
+        toggleHymnInPlaylist(num, targetList);
         return;
       }
       const openArea = e.target.closest('[data-open-hymn]');
@@ -1032,60 +1297,18 @@
     });
 
     // Playlist Management ("Mi Lista")
-    document.getElementById('playlist-select').addEventListener('change', (e) => {
-      state.activePlaylistId = e.target.value;
-      saveState();
-      renderPlaylistView();
-      renderSearchResults();
-    });
-
-    document.getElementById('btn-new-playlist').addEventListener('click', () => {
-      const today = new Date().toISOString().slice(0, 10);
-      const newId = 'pl-' + Date.now();
-      const count = state.playlists.length + 1;
-      state.playlists.unshift({
-        id: newId,
-        name: `Alabanza #${count}`,
-        date: today,
-        items: []
-      });
-      state.activePlaylistId = newId;
-      saveState();
-      renderPlaylistView();
-      showToast('Nueva lista creada');
-      document.getElementById('playlist-name-input').focus();
-    });
-
-    document.getElementById('btn-delete-playlist').addEventListener('click', () => {
-      if (state.playlists.length <= 1) {
-        const pl = getActivePlaylist();
-        pl.items = [];
-        saveState();
-        renderPlaylistView();
-        showToast('Se vaciaron los himnos de la lista');
-        return;
-      }
-      const pl = getActivePlaylist();
-      state.playlists = state.playlists.filter((p) => p.id !== pl.id);
-      state.activePlaylistId = state.playlists[0].id;
-      saveState();
-      renderPlaylistView();
-      showToast(`Lista "${pl.name}" eliminada`);
-    });
-
-    document.getElementById('playlist-name-input').addEventListener('input', (e) => {
-      const pl = getActivePlaylist();
-      pl.name = e.target.value;
-      saveState();
-      const select = document.getElementById('playlist-select');
-      const opt = select.querySelector(`option[value="${pl.id}"]`);
-      if (opt) opt.textContent = `${pl.name || 'Sin nombre'} (${pl.items.length})`;
-    });
-
     document.getElementById('playlist-date-input').addEventListener('change', (e) => {
       const pl = getActivePlaylist();
       pl.date = e.target.value;
       saveState();
+    });
+
+    document.getElementById('btn-clear-playlist').addEventListener('click', () => {
+      const pl = getActivePlaylist();
+      pl.items = [];
+      saveState();
+      renderPlaylistView();
+      showToast(`Se vació la lista de ${pl.name}`);
     });
 
     document.getElementById('btn-start-pulpit').addEventListener('click', () => {
@@ -1150,7 +1373,7 @@
         const removed = pl.items.splice(idx, 1)[0];
         saveState();
         renderPlaylistView();
-        if (removed) showToast(`Himno #${removed.n} quitado de la lista`);
+        if (removed) showToast(`Himno #${removed.n} quitado de ${pl.name}`);
         return;
       }
 
@@ -1177,7 +1400,6 @@
           current.sort((a, b) => a - b);
         }
 
-        // If all stanzas are selected, store empty array [] for compactness
         item.stanzas = current.length === allStanzaNums.length ? [] : current;
         saveState();
         renderPlaylistView();
@@ -1242,8 +1464,11 @@
       renderReaderView(currentReaderHymnNum);
     });
 
-    document.getElementById('btn-reader-toggle-list').addEventListener('click', () => {
-      toggleHymnInActivePlaylist(currentReaderHymnNum);
+    document.querySelectorAll('[data-reader-list]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const listId = btn.getAttribute('data-reader-list');
+        toggleHymnInPlaylist(currentReaderHymnNum, listId);
+      });
     });
 
     document.getElementById('btn-prev-hymn').addEventListener('click', () => {
@@ -1254,7 +1479,7 @@
       navigateReaderRelative(1);
     });
 
-    // Horizontal swipe gesture in Modo Púlpito to switch between playlist hymns
+    // Horizontal swipe gesture in Modo Púlpito
     let touchStartX = 0;
     let touchStartY = 0;
     const readerCard = document.getElementById('reader-card');
@@ -1288,14 +1513,32 @@
     );
 
     // Share / Export & Import View Actions
+    document.querySelectorAll('[data-export-scope]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        exportScope = btn.getAttribute('data-export-scope') || 'active';
+        renderShareView();
+      });
+    });
+
+    document.querySelectorAll('[data-export-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.getAttribute('data-export-tab');
+        if (tabId) {
+          state.activePlaylistId = tabId;
+          saveState();
+          renderShareView();
+        }
+      });
+    });
+
     document.getElementById('btn-share-whatsapp').addEventListener('click', () => {
-      const msg = buildShareableMessage(getActivePlaylist());
+      const msg = buildShareableMessage();
       const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
     });
 
     document.getElementById('btn-copy-export').addEventListener('click', async () => {
-      const msg = buildShareableMessage(getActivePlaylist());
+      const msg = buildShareableMessage();
       try {
         await navigator.clipboard.writeText(msg);
         showToast('¡Lista y código copiados al portapapeles!');
@@ -1309,11 +1552,11 @@
 
     document.getElementById('btn-native-share').addEventListener('click', async () => {
       const pl = getActivePlaylist();
-      const msg = buildShareableMessage(pl);
+      const msg = buildShareableMessage();
       if (navigator.share) {
         try {
           await navigator.share({
-            title: `Lista de Alabanza: ${pl.name}`,
+            title: exportScope === 'all' ? 'Programa Completo de Alabanza' : `Lista de ${pl.name}`,
             text: msg
           });
         } catch (err) {
@@ -1326,11 +1569,15 @@
     });
 
     document.getElementById('btn-download-json').addEventListener('click', () => {
-      const pl = getActivePlaylist();
-      const blob = new Blob([JSON.stringify(pl, null, 2)], { type: 'application/json' });
+      const dataToExport =
+        exportScope === 'all' ? { playlists: state.playlists } : getActivePlaylist();
+      const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const safeName = (pl.name || 'alabanza').replace(/[^a-z0-9_-]/gi, '_');
+      const safeName =
+        exportScope === 'all'
+          ? 'programa_completo'
+          : (getActivePlaylist().name || 'alabanza').replace(/[^a-z0-9_-]/gi, '_');
       a.href = url;
       a.download = `himnos_${safeName}.json`;
       document.body.appendChild(a);
@@ -1342,12 +1589,12 @@
 
     document.getElementById('btn-process-import').addEventListener('click', () => {
       const input = document.getElementById('import-text-input');
-      const modeEl = document.querySelector('input[name="import-mode"]:checked');
-      const mode = modeEl ? modeEl.value : 'new';
+      const targetSelect = document.getElementById('import-target-select');
+      const targetOverride = targetSelect ? targetSelect.value : 'auto';
       try {
-        const imported = parseImportedPlaylist(input.value);
+        const imported = parseImportedData(input.value);
         input.value = '';
-        applyImportedPlaylist(imported, mode);
+        applyImportedData(imported, targetOverride);
       } catch (err) {
         showToast(err.message || 'Código inválido');
       }
@@ -1373,9 +1620,9 @@
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const imported = parseImportedPlaylist(String(reader.result || ''));
-          const modeEl = document.querySelector('input[name="import-mode"]:checked');
-          applyImportedPlaylist(imported, modeEl ? modeEl.value : 'new');
+          const imported = parseImportedData(String(reader.result || ''));
+          const targetSelect = document.getElementById('import-target-select');
+          applyImportedData(imported, targetSelect ? targetSelect.value : 'auto');
         } catch (err) {
           showToast(err.message || 'No se pudo leer el archivo .json');
         }
@@ -1433,14 +1680,16 @@
       }
     });
 
-    document.getElementById('btn-dialer-add').addEventListener('click', () => {
-      const n = Number(dialerDigits);
-      if (HYMN_BY_NUM.has(n)) {
-        toggleHymnInActivePlaylist(n);
-        dialerBackdrop.classList.remove('open');
-      } else {
-        showToast('Ingresa un número del 1 al 613');
-      }
+    document.querySelectorAll('[data-dialer-add]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const n = Number(dialerDigits);
+        const listId = btn.getAttribute('data-dialer-add');
+        if (HYMN_BY_NUM.has(n)) {
+          toggleHymnInPlaylist(n, listId);
+        } else {
+          showToast('Ingresa un número del 1 al 613');
+        }
+      });
     });
   }
 

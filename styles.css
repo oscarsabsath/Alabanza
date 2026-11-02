@@ -300,9 +300,9 @@ html, body {
   border-radius: 14px;
   padding: 12px 14px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.08s ease;
 }
@@ -377,30 +377,83 @@ html, body {
 }
 
 .hymn-card-actions {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  flex-shrink: 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
 }
 
 .add-list-btn {
-  min-height: 40px;
-  padding: 0 13px;
-  border-radius: 10px;
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: 9px;
   border: 1.5px solid var(--border);
   background: var(--bg-primary);
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-weight: 700;
-  font-size: 0.83rem;
+  font-size: 0.78rem;
   cursor: pointer;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   transition: all 0.15s ease;
+}
+
+.add-list-btn:active {
+  transform: scale(0.96);
 }
 
 .add-list-btn.in-list {
   background: var(--success-soft);
   border-color: var(--success);
   color: var(--success);
+}
+
+/* 3 Service Tabs Bar (Culto | Escuela Sabática | Santa Cena) */
+.service-tabs-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 6px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+
+.service-tab-btn {
+  min-height: 44px;
+  padding: 6px 6px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.79rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.service-tab-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.service-tab-count {
+  font-size: 0.7rem;
+  opacity: 0.85;
+  font-weight: 800;
 }
 
 /* Director List View ("Mi Lista") */
