@@ -170,7 +170,13 @@
   function populateCategorySelect() {
     const select = document.getElementById('category-filter');
     const categories = [];
-    const seen = new Set(['Ingreso de Oficiantes', 'Recogida de Diezmos y Ofrendas']);
+    const seen = new Set([
+      'Entrada de Oficiantes',
+      'Recogida de Diezmos',
+      'Apertura',
+      'Clausura',
+      'Doxología'
+    ]);
     for (const h of HYMNS) {
       if (h.cat && !seen.has(h.cat)) {
         seen.add(h.cat);
@@ -269,8 +275,12 @@
 
     const btnOficiantes = document.getElementById('btn-filter-oficiantes');
     const btnDiezmos = document.getElementById('btn-filter-diezmos');
+    const btnApertura = document.getElementById('btn-filter-apertura');
+    const btnClausura = document.getElementById('btn-filter-clausura');
     if (btnOficiantes) btnOficiantes.classList.toggle('active', category === 'TAG:oficiantes');
     if (btnDiezmos) btnDiezmos.classList.toggle('active', category === 'TAG:diezmos');
+    if (btnApertura) btnApertura.classList.toggle('active', category === 'TAG:apertura');
+    if (btnClausura) btnClausura.classList.toggle('active', category === 'TAG:clausura');
 
     const pl = getActivePlaylist();
     const inListSet = new Set(pl.items.map((item) => item.n));
@@ -282,10 +292,9 @@
     const queryWords = normQuery ? normQuery.split(' ').filter(Boolean) : [];
 
     let filtered = HYMNS.filter((h) => {
-      if (category === 'TAG:oficiantes') {
-        if (!Array.isArray(h.tags) || !h.tags.includes('oficiantes')) return false;
-      } else if (category === 'TAG:diezmos') {
-        if (!Array.isArray(h.tags) || !h.tags.includes('diezmos')) return false;
+      if (category && category.startsWith('TAG:')) {
+        const tag = category.slice(4);
+        if (!Array.isArray(h.tags) || !h.tags.includes(tag)) return false;
       } else if (category && h.cat !== category) {
         return false;
       }
@@ -328,15 +337,29 @@
       });
     } else if (category === 'TAG:oficiantes') {
       filtered.sort((a, b) => {
-        const primA = a.cat === 'Ingreso de Oficiantes' ? 0 : 1;
-        const primB = b.cat === 'Ingreso de Oficiantes' ? 0 : 1;
+        const primA = a.cat === 'Entrada de Oficiantes' ? 0 : 1;
+        const primB = b.cat === 'Entrada de Oficiantes' ? 0 : 1;
         if (primA !== primB) return primA - primB;
         return a.n - b.n;
       });
     } else if (category === 'TAG:diezmos') {
       filtered.sort((a, b) => {
-        const primA = a.cat === 'Recogida de Diezmos y Ofrendas' ? 0 : 1;
-        const primB = b.cat === 'Recogida de Diezmos y Ofrendas' ? 0 : 1;
+        const primA = a.cat === 'Recogida de Diezmos' ? 0 : 1;
+        const primB = b.cat === 'Recogida de Diezmos' ? 0 : 1;
+        if (primA !== primB) return primA - primB;
+        return a.n - b.n;
+      });
+    } else if (category === 'TAG:apertura') {
+      filtered.sort((a, b) => {
+        const primA = a.cat === 'Apertura' ? 0 : 1;
+        const primB = b.cat === 'Apertura' ? 0 : 1;
+        if (primA !== primB) return primA - primB;
+        return a.n - b.n;
+      });
+    } else if (category === 'TAG:clausura') {
+      filtered.sort((a, b) => {
+        const primA = a.cat === 'Clausura' ? 0 : 1;
+        const primB = b.cat === 'Clausura' ? 0 : 1;
         if (primA !== primB) return primA - primB;
         return a.n - b.n;
       });
@@ -433,10 +456,16 @@
     } else {
       const category = document.getElementById('category-filter')?.value || '';
       let defaultNote = '';
-      if (category === 'TAG:oficiantes' || (hymn && hymn.cat === 'Ingreso de Oficiantes')) {
-        defaultNote = 'Ingreso de Oficiantes';
-      } else if (category === 'TAG:diezmos' || (hymn && hymn.cat === 'Recogida de Diezmos y Ofrendas')) {
-        defaultNote = 'Recogida de los Diezmos';
+      if (category === 'TAG:oficiantes' || (hymn && hymn.cat === 'Entrada de Oficiantes')) {
+        defaultNote = 'Entrada de Oficiantes';
+      } else if (category === 'TAG:diezmos' || (hymn && hymn.cat === 'Recogida de Diezmos')) {
+        defaultNote = 'Recogida de Diezmos';
+      } else if (category === 'TAG:apertura' || (hymn && hymn.cat === 'Apertura')) {
+        defaultNote = 'Apertura';
+      } else if (category === 'TAG:clausura' || (hymn && hymn.cat === 'Clausura')) {
+        defaultNote = 'Clausura';
+      } else if (category === 'TAG:doxologia' || (hymn && hymn.cat === 'Doxología')) {
+        defaultNote = 'Doxología';
       }
       pl.items.push({
         n: hymnNum,
@@ -948,6 +977,24 @@
     if (btnDiezmos) {
       btnDiezmos.addEventListener('click', () => {
         catSelect.value = catSelect.value === 'TAG:diezmos' ? '' : 'TAG:diezmos';
+        searchRenderLimit = 80;
+        renderSearchResults();
+      });
+    }
+
+    const btnApertura = document.getElementById('btn-filter-apertura');
+    if (btnApertura) {
+      btnApertura.addEventListener('click', () => {
+        catSelect.value = catSelect.value === 'TAG:apertura' ? '' : 'TAG:apertura';
+        searchRenderLimit = 80;
+        renderSearchResults();
+      });
+    }
+
+    const btnClausura = document.getElementById('btn-filter-clausura');
+    if (btnClausura) {
+      btnClausura.addEventListener('click', () => {
+        catSelect.value = catSelect.value === 'TAG:clausura' ? '' : 'TAG:clausura';
         searchRenderLimit = 80;
         renderSearchResults();
       });
