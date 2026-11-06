@@ -26,6 +26,9 @@
         </div>
       </div>
       <div class="header-actions">
+        <button type="button" class="icon-btn" id="btn-open-install-modal" title="Descargar App en Android o Apple">
+          <span>📲 App</span>
+        </button>
         <button type="button" class="icon-btn accent" id="btn-open-dialer" title="Ir a un número de himno (1-613)">
           <span>#123</span>
         </button>
@@ -313,7 +316,10 @@
             <span>📲 Compartir Flyer</span>
           </button>
           <button type="button" class="btn-primary" id="btn-download-flyer">
-            <span>💾 Descargar Imagen</span>
+            <span>🤖 Descargar (Android / PC)</span>
+          </button>
+          <button type="button" class="btn-secondary btn-apple-action" id="btn-save-apple-flyer">
+            <span>🍎 Guardar en Apple (iPhone)</span>
           </button>
           <button type="button" class="btn-secondary" id="btn-copy-flyer">
             <span>📋 Copiar Imagen</span>
@@ -406,13 +412,25 @@
       </div>
 
       <!-- Install Guide Card for Android & iOS -->
-      <div class="share-card">
-        <h2>📱 Cómo instalar esta App en tu Celular (100% Offline)</h2>
-        <p style="margin-bottom:8px">Todos tus cambios se guardan automáticamente en la memoria interna de tu teléfono:</p>
-        <ul style="font-size:0.84rem;color:var(--text-secondary);padding-left:18px;display:flex;flex-direction:column;gap:6px">
-          <li><strong>En Android (Chrome):</strong> Toca el menú <strong>⋮</strong> (arriba a la derecha) y selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</li>
-          <li><strong>En iPhone / iPad (Safari):</strong> Toca el botón <strong>Compartir (⬆️)</strong> en la barra inferior y elige <strong>"Agregar a inicio"</strong>.</li>
-        </ul>
+      <div class="share-card install-app-card" id="install-app-card">
+        <h2>📱 Descargar App en Android y Apple (100% Offline)</h2>
+        <p style="margin-bottom:12px">Instala el Himnario Adventista 2009 en tu teléfono para usarlo sin internet en el púlpito:</p>
+        <div class="platform-download-grid">
+          <button type="button" class="platform-download-btn android" id="btn-install-android">
+            <span class="platform-icon">🤖</span>
+            <span class="platform-text">
+              <strong>Descargar en Android</strong>
+              <small id="android-install-sub">Instalar aplicación ahora</small>
+            </span>
+          </button>
+          <button type="button" class="platform-download-btn apple" id="btn-install-apple">
+            <span class="platform-icon">🍎</span>
+            <span class="platform-text">
+              <strong>Descargar en Apple</strong>
+              <small>iPhone / iPad (iOS)</small>
+            </span>
+          </button>
+        </div>
       </div>
     </section>
   </div>
@@ -472,6 +490,99 @@
         <button type="button" class="add-list-btn" data-dialer-add="pl-santacena">+ Santa Cena</button>
       </div>
       <button type="button" class="btn-primary" id="btn-dialer-open" style="width:100%">Ver Letra ▶</button>
+    </div>
+  </div>
+
+  <!-- App Install Modal (Android & Apple iOS) -->
+  <div id="install-modal-backdrop" class="modal-backdrop">
+    <div class="dialer-modal install-modal" role="dialog" aria-label="Descargar aplicación en Android o Apple">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong style="font-size:1rem">📲 Descargar App (100% Offline)</strong>
+        <button type="button" class="mini-btn" id="btn-close-install-modal">✕</button>
+      </div>
+
+      <div class="install-platform-tabs">
+        <button type="button" class="chip-btn active" data-install-tab="android" id="tab-install-android" style="flex:1;justify-content:center">
+          <span>🤖 Android</span>
+        </button>
+        <button type="button" class="chip-btn" data-install-tab="apple" id="tab-install-apple" style="flex:1;justify-content:center">
+          <span>🍎 Apple (iPhone / iPad)</span>
+        </button>
+      </div>
+
+      <!-- Android Install Content -->
+      <div id="install-panel-android" class="install-panel active">
+        <div class="install-step-box">
+          <div class="install-step">
+            <span class="order-pill">1</span>
+            <div>
+              <strong>Instalación directa en Android</strong>
+              <p>Si usas Chrome, Edge o Samsung Internet, toca el botón de abajo para instalar la App de inmediato:</p>
+            </div>
+          </div>
+          <button type="button" class="btn-primary" id="btn-trigger-android-prompt" style="width:100%;margin:10px 0">
+            <span>🤖 Instalar App en Android</span>
+          </button>
+          <div class="install-step" style="margin-top:8px">
+            <span class="order-pill">2</span>
+            <div>
+              <strong>O desde el menú del navegador</strong>
+              <p>Toca los tres puntos <strong>⋮</strong> arriba a la derecha y elige <strong>"Instalar aplicación"</strong> o <strong>"Agregar a pantalla principal"</strong>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Apple iOS Install Content -->
+      <div id="install-panel-apple" class="install-panel">
+        <div class="install-step-box">
+          <div class="install-step">
+            <span class="order-pill">1</span>
+            <div>
+              <strong>Abre en Safari (iPhone o iPad)</strong>
+              <p>En tu iPhone o iPad, toca el botón <strong>Compartir (⬆️)</strong> en la barra inferior o superior de Safari.</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <span class="order-pill">2</span>
+            <div>
+              <strong>Elige "Agregar a inicio" ➕</strong>
+              <p>Desliza el menú hacia abajo y selecciona <strong>"Agregar a la pantalla de inicio"</strong>.</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <span class="order-pill">3</span>
+            <div>
+              <strong>Toca "Agregar" arriba a la derecha</strong>
+              <p>¡Listo! El ícono del <strong>Himnario 2009</strong> aparecerá junto a tus demás apps y funcionará sin internet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apple iOS Flyer Save Modal -->
+  <div id="apple-flyer-modal-backdrop" class="modal-backdrop">
+    <div class="dialer-modal install-modal" role="dialog" aria-label="Guardar Flyer en iPhone o iPad">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong style="font-size:0.98rem">🍎 Guardar Flyer en iPhone / iPad</strong>
+        <button type="button" class="mini-btn" id="btn-close-apple-flyer-modal">✕</button>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:10px">
+        <strong>Mantén presionada la imagen</strong> de abajo y elige <strong>"Guardar en Fotos"</strong>, o usa el botón de abajo para abrir el menú de tu iPhone:
+      </p>
+      <div class="apple-flyer-img-wrap">
+        <img id="apple-flyer-preview-img" alt="Flyer de Alabanza" class="apple-flyer-img" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <button type="button" class="btn-primary" id="btn-apple-modal-share">
+          <span>⬆️ Menú iPhone / Fotos</span>
+        </button>
+        <button type="button" class="btn-secondary" id="btn-apple-modal-download">
+          <span>💾 Descargar Archivo</span>
+        </button>
+      </div>
     </div>
   </div>
 

@@ -23,6 +23,7 @@
   let searchRenderLimit = 80;
   let dialerDigits = '';
   let exportScope = 'active'; // 'active' | 'all'
+  let deferredInstallPrompt = null;
 
   // Persistent User State (saved in localStorage)
   let state = loadState();
@@ -1731,6 +1732,51 @@
     }
   }
 
+  function openAppleFlyerModal() {
+    renderFlyerCanvas();
+    const canvas = document.getElementById('flyer-canvas');
+    const modal = document.getElementById('apple-flyer-modal-backdrop');
+    const imgEl = document.getElementById('apple-flyer-preview-img');
+    if (!canvas || !modal || !imgEl) return;
+    imgEl.src = canvas.toDataURL('image/png');
+    modal.classList.add('open');
+  }
+
+  function switchInstallTab(platform) {
+    document.querySelectorAll('[data-install-tab]').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-install-tab') === platform);
+    });
+    document.getElementById('install-panel-android')?.classList.toggle('active', platform === 'android');
+    document.getElementById('install-panel-apple')?.classList.toggle('active', platform === 'apple');
+  }
+
+  function openInstallModal(preferredPlatform) {
+    const modal = document.getElementById('install-modal-backdrop');
+    if (!modal) return;
+    const isAppleDevice = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent || '');
+    const platform = preferredPlatform || (isAppleDevice ? 'apple' : 'android');
+    switchInstallTab(platform);
+    modal.classList.add('open');
+  }
+
+  async function triggerAndroidInstall() {
+    if (deferredInstallPrompt) {
+      try {
+        deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          showToast('¡Instalando aplicación en tu Android!');
+          deferredInstallPrompt = null;
+          document.getElementById('install-modal-backdrop')?.classList.remove('open');
+          return;
+        }
+      } catch (err) {
+        // Fallback to guide modal
+      }
+    }
+    openInstallModal('android');
+  }
+
   function renderShareView() {
     updateGlobalBadges();
     document.querySelectorAll('.export-single-tab-selector').forEach((el) => {
@@ -2388,8 +2434,74 @@
       downloadFlyerImage();
     });
 
+    document.getElementById('btn-save-apple-flyer')?.addEventListener('click', () => {
+      openAppleFlyerModal();
+    });
+
     document.getElementById('btn-copy-flyer')?.addEventListener('click', () => {
       copyFlyerImage();
+    });
+
+    // App Install & Apple Flyer Modal Events
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      const sub = document.getElementById('android-install-sub');
+      if (sub) sub.textContent = 'Instalación directa en 1 toque';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      showToast('¡App instalada con éxito en tu dispositivo!');
+    });
+
+    document.getElementById('btn-open-install-modal')?.addEventListener('click', () => {
+      openInstallModal();
+    });
+
+    document.getElementById('btn-install-android')?.addEventListener('click', () => {
+      triggerAndroidInstall();
+    });
+
+    document.getElementById('btn-install-apple')?.addEventListener('click', () => {
+      openInstallModal('apple');
+    });
+
+    document.getElementById('btn-trigger-android-prompt')?.addEventListener('click', () => {
+      if (deferredInstallPrompt) {
+        triggerAndroidInstall();
+      } else {
+        showToast('Usa el menú ⋮ de tu navegador y elige "Instalar aplicación"');
+      }
+    });
+
+    document.querySelectorAll('[data-install-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-install-tab');
+        if (tab) switchInstallTab(tab);
+      });
+    });
+
+    const installModalBackdrop = document.getElementById('install-modal-backdrop');
+    document.getElementById('btn-close-install-modal')?.addEventListener('click', () => {
+      installModalBackdrop?.classList.remove('open');
+    });
+    installModalBackdrop?.addEventListener('click', (e) => {
+      if (e.target === installModalBackdrop) installModalBackdrop.classList.remove('open');
+    });
+
+    const appleFlyerBackdrop = document.getElementById('apple-flyer-modal-backdrop');
+    document.getElementById('btn-close-apple-flyer-modal')?.addEventListener('click', () => {
+      appleFlyerBackdrop?.classList.remove('open');
+    });
+    appleFlyerBackdrop?.addEventListener('click', (e) => {
+      if (e.target === appleFlyerBackdrop) appleFlyerBackdrop.classList.remove('open');
+    });
+    document.getElementById('btn-apple-modal-share')?.addEventListener('click', () => {
+      shareFlyerImage();
+    });
+    document.getElementById('btn-apple-modal-download')?.addEventListener('click', () => {
+      downloadFlyerImage();
     });
 
     document.getElementById('btn-share-whatsapp').addEventListener('click', () => {
