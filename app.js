@@ -35,6 +35,9 @@
       repeatChorus: true,
       favorites: [1, 61, 538],
       activePlaylistId: 'pl-servicio',
+      flyerTheme: 'royal-gold',
+      flyerChurch: '',
+      flyerDirector: '',
       playlists: [
         {
           id: 'pl-servicio',
@@ -121,6 +124,9 @@
         repeatChorus: typeof parsed.repeatChorus === 'boolean' ? parsed.repeatChorus : def.repeatChorus,
         favorites: Array.isArray(parsed.favorites) ? parsed.favorites : def.favorites,
         activePlaylistId: activeId,
+        flyerTheme: parsed.flyerTheme || def.flyerTheme,
+        flyerChurch: typeof parsed.flyerChurch === 'string' ? parsed.flyerChurch : def.flyerChurch,
+        flyerDirector: typeof parsed.flyerDirector === 'string' ? parsed.flyerDirector : def.flyerDirector,
         playlists
       };
     } catch (e) {
@@ -980,19 +986,778 @@
     return lines.join('\n');
   }
 
+  const FLYER_THEMES = {
+    'royal-gold': {
+      bgStops: ['#070c18', '#101d3b', '#080e1e'],
+      glowTop: 'rgba(245, 158, 11, 0.20)',
+      glowBottom: 'rgba(59, 130, 246, 0.14)',
+      frameOuter: 'rgba(245, 158, 11, 0.55)',
+      frameInner: 'rgba(245, 158, 11, 0.22)',
+      accent: '#f59e0b',
+      accentLight: '#fde047',
+      accentDark: '#b45309',
+      badgeText: '#091022',
+      cardBg: 'rgba(20, 31, 58, 0.88)',
+      cardBorder: 'rgba(245, 158, 11, 0.28)',
+      sectionBg: 'rgba(245, 158, 11, 0.14)',
+      notePillBg: 'rgba(245, 158, 11, 0.18)',
+      notePillBorder: 'rgba(245, 158, 11, 0.45)',
+      notePillText: '#fde047',
+      textPrimary: '#f8fafc',
+      textSecondary: '#cbd5e1',
+      textMuted: '#94a3b8'
+    },
+    'classic-ivory': {
+      bgStops: ['#fdfbf7', '#f5efe2', '#eae0cc'],
+      glowTop: 'rgba(180, 83, 9, 0.11)',
+      glowBottom: 'rgba(146, 64, 14, 0.08)',
+      frameOuter: 'rgba(180, 83, 9, 0.50)',
+      frameInner: 'rgba(180, 83, 9, 0.22)',
+      accent: '#b45309',
+      accentLight: '#d97706',
+      accentDark: '#78350f',
+      badgeText: '#ffffff',
+      cardBg: 'rgba(255, 255, 255, 0.92)',
+      cardBorder: 'rgba(180, 83, 9, 0.25)',
+      sectionBg: 'rgba(180, 83, 9, 0.11)',
+      notePillBg: 'rgba(180, 83, 9, 0.12)',
+      notePillBorder: 'rgba(180, 83, 9, 0.35)',
+      notePillText: '#92400e',
+      textPrimary: '#0f172a',
+      textSecondary: '#334155',
+      textMuted: '#64748b'
+    },
+    'celestial-blue': {
+      bgStops: ['#07132c', '#122b60', '#091838'],
+      glowTop: 'rgba(56, 189, 248, 0.20)',
+      glowBottom: 'rgba(245, 158, 11, 0.12)',
+      frameOuter: 'rgba(56, 189, 248, 0.55)',
+      frameInner: 'rgba(56, 189, 248, 0.22)',
+      accent: '#38bdf8',
+      accentLight: '#bae6fd',
+      accentDark: '#0284c7',
+      badgeText: '#07132c',
+      cardBg: 'rgba(15, 36, 80, 0.86)',
+      cardBorder: 'rgba(56, 189, 248, 0.30)',
+      sectionBg: 'rgba(56, 189, 248, 0.14)',
+      notePillBg: 'rgba(56, 189, 248, 0.16)',
+      notePillBorder: 'rgba(56, 189, 248, 0.42)',
+      notePillText: '#bae6fd',
+      textPrimary: '#f8fafc',
+      textSecondary: '#e0f2fe',
+      textMuted: '#93c5fd'
+    },
+    'solemn-emerald': {
+      bgStops: ['#041d17', '#08372b', '#05231b'],
+      glowTop: 'rgba(251, 191, 36, 0.18)',
+      glowBottom: 'rgba(16, 185, 129, 0.14)',
+      frameOuter: 'rgba(251, 191, 36, 0.52)',
+      frameInner: 'rgba(251, 191, 36, 0.22)',
+      accent: '#fbbf24',
+      accentLight: '#fef08a',
+      accentDark: '#b45309',
+      badgeText: '#041d17',
+      cardBg: 'rgba(8, 49, 39, 0.86)',
+      cardBorder: 'rgba(251, 191, 36, 0.28)',
+      sectionBg: 'rgba(251, 191, 36, 0.13)',
+      notePillBg: 'rgba(251, 191, 36, 0.16)',
+      notePillBorder: 'rgba(251, 191, 36, 0.42)',
+      notePillText: '#fef08a',
+      textPrimary: '#f8fafc',
+      textSecondary: '#d1fae5',
+      textMuted: '#6ee7b7'
+    }
+  };
+
+  function formatDisplayDate(isoDateStr) {
+    if (!isoDateStr) return '';
+    const parts = isoDateStr.split('-').map(Number);
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return isoDateStr;
+    try {
+      const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+      const formatted = dateObj.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+      return formatted.toUpperCase();
+    } catch (e) {
+      return isoDateStr;
+    }
+  }
+
+  function drawRoundedRect(ctx, x, y, w, h, r) {
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
+
+  function wrapCanvasText(ctx, text, maxWidth) {
+    const words = String(text || '').split(/\s+/).filter(Boolean);
+    if (words.length === 0) return [''];
+    const lines = [];
+    let current = words[0];
+    for (let i = 1; i < words.length; i++) {
+      const candidate = current + ' ' + words[i];
+      if (ctx.measureText(candidate).width <= maxWidth) {
+        current = candidate;
+      } else {
+        lines.push(current);
+        current = words[i];
+      }
+    }
+    lines.push(current);
+    return lines;
+  }
+
+  function drawFlyerEmblem(ctx, cx, cy, palette) {
+    ctx.save();
+    // Outer soft halo
+    const halo = ctx.createRadialGradient(cx, cy, 10, cx, cy, 68);
+    halo.addColorStop(0, palette.glowTop);
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 68, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Emblem circle
+    ctx.fillStyle = palette.cardBg;
+    ctx.strokeStyle = palette.accent;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 48, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Inner ring
+    ctx.strokeStyle = palette.frameInner;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 41, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Subtle Cross at top
+    ctx.strokeStyle = palette.accentLight;
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 30);
+    ctx.lineTo(cx, cy - 14);
+    ctx.moveTo(cx - 6, cy - 24);
+    ctx.lineTo(cx + 6, cy - 24);
+    ctx.stroke();
+
+    // Open Hymnal Book
+    ctx.strokeStyle = palette.accent;
+    ctx.lineWidth = 3.5;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - 24, cy - 6);
+    ctx.quadraticCurveTo(cx - 12, cy - 11, cx, cy - 3);
+    ctx.quadraticCurveTo(cx + 12, cy - 11, cx + 24, cy - 6);
+    ctx.lineTo(cx + 24, cy + 20);
+    ctx.quadraticCurveTo(cx + 12, cy + 15, cx, cy + 23);
+    ctx.quadraticCurveTo(cx - 12, cy + 15, cx - 24, cy + 20);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Spine
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 3);
+    ctx.lineTo(cx, cy + 23);
+    ctx.stroke();
+
+    // Page lines
+    ctx.strokeStyle = palette.textPrimary;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - 17, cy + 2);
+    ctx.lineTo(cx - 6, cy + 4);
+    ctx.moveTo(cx - 17, cy + 9);
+    ctx.lineTo(cx - 6, cy + 11);
+    ctx.moveTo(cx + 6, cy + 4);
+    ctx.lineTo(cx + 17, cy + 2);
+    ctx.moveTo(cx + 6, cy + 11);
+    ctx.lineTo(cx + 17, cy + 9);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawOrnamentalDivider(ctx, cx, y, halfWidth, palette) {
+    ctx.save();
+    const gradLeft = ctx.createLinearGradient(cx - halfWidth, y, cx - 18, y);
+    gradLeft.addColorStop(0, 'rgba(0,0,0,0)');
+    gradLeft.addColorStop(1, palette.accent);
+    ctx.strokeStyle = gradLeft;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - halfWidth, y);
+    ctx.lineTo(cx - 18, y);
+    ctx.stroke();
+
+    const gradRight = ctx.createLinearGradient(cx + 18, y, cx + halfWidth, y);
+    gradRight.addColorStop(0, palette.accent);
+    gradRight.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.strokeStyle = gradRight;
+    ctx.beginPath();
+    ctx.moveTo(cx + 18, y);
+    ctx.lineTo(cx + halfWidth, y);
+    ctx.stroke();
+
+    // Center diamond
+    ctx.fillStyle = palette.accent;
+    ctx.beginPath();
+    ctx.moveTo(cx, y - 7);
+    ctx.lineTo(cx + 7, y);
+    ctx.lineTo(cx, y + 7);
+    ctx.lineTo(cx - 7, y);
+    ctx.closePath();
+    ctx.fill();
+
+    // Side mini dots
+    ctx.beginPath();
+    ctx.arc(cx - 16, y, 2.5, 0, Math.PI * 2);
+    ctx.arc(cx + 16, y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function renderFlyerCanvas() {
+    const canvas = document.getElementById('flyer-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const palette = FLYER_THEMES[state.flyerTheme] || FLYER_THEMES['royal-gold'];
+    const W = 1080;
+    const fontStack = '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif';
+
+    const churchText = (state.flyerChurch || '').trim() || 'HIMNARIO ADVENTISTA 2009';
+    const directorText = (state.flyerDirector || '').trim();
+
+    // Determine lists to render
+    const activePl = getActivePlaylist();
+    let listsToRender = [];
+    if (exportScope === 'all') {
+      const nonEmpty = state.playlists.filter((p) => p.items.length > 0);
+      listsToRender = nonEmpty.length > 0 ? nonEmpty : [activePl];
+    } else {
+      listsToRender = [activePl];
+    }
+
+    const isMulti = exportScope === 'all' && listsToRender.length > 1;
+
+    // Pre-calculate item layouts and total height
+    const cardX = 86;
+    const cardW = W - cardX * 2; // 908px
+    const textLeftOffset = 178; // Inside card for title & meta
+    const textMaxW = cardW - textLeftOffset - 36;
+
+    const preparedSections = listsToRender.map((pl) => {
+      const preparedItems = pl.items.map((item, idx) => {
+        const hymn = HYMN_BY_NUM.get(item.n);
+        const titleStr = hymn ? hymn.t : `Himno #${item.n}`;
+        ctx.font = `800 ${isMulti ? 30 : 34}px ${fontStack}`;
+        const titleLines = wrapCanvasText(ctx, titleStr, textMaxW);
+
+        const noteStr = (item.note || '').trim();
+        const catStr = hymn && hymn.cat ? hymn.cat : '';
+        const bibleStr = hymn && hymn.b ? `📖 ${hymn.b}` : '';
+        const hasCustomStanzas =
+          Array.isArray(item.stanzas) &&
+          item.stanzas.length > 0 &&
+          (!hymn || item.stanzas.length < hymn.s.length);
+        const stanzaStr = hasCustomStanzas
+          ? `🎤 Estrofas: ${item.stanzas.join(', ')}`
+          : hymn && hymn.s
+          ? `${hymn.s.length} estrofa${hymn.s.length === 1 ? '' : 's'}${hymn.c ? ' + Coro' : ''}`
+          : '';
+
+        const metaParts = [catStr, bibleStr, stanzaStr].filter(Boolean);
+        const metaLine = metaParts.join('   ·   ');
+
+        let cardH = isMulti ? 124 : 144;
+        if (noteStr) cardH += 38;
+        if (titleLines.length > 1) cardH += (titleLines.length - 1) * (isMulti ? 36 : 40);
+
+        return {
+          order: idx + 1,
+          num: item.n,
+          noteStr,
+          titleLines,
+          metaLine,
+          hasCustomStanzas,
+          cardH
+        };
+      });
+
+      return {
+        id: pl.id,
+        name: pl.name,
+        date: pl.date,
+        items: preparedItems
+      };
+    });
+
+    // Compute total Y height needed
+    let cursorY = 395; // Start of body after header
+    for (const sec of preparedSections) {
+      if (isMulti) {
+        cursorY += 72; // Section header banner
+      }
+      if (sec.items.length === 0) {
+        cursorY += 160;
+      } else {
+        for (const it of sec.items) {
+          cursorY += it.cardH + (isMulti ? 18 : 22);
+        }
+      }
+      if (isMulti) {
+        cursorY += 22; // Extra gap between sections
+      }
+    }
+
+    if (directorText) {
+      cursorY += 74;
+    }
+    const footerHeight = 175;
+    const totalH = Math.max(1350, cursorY + footerHeight);
+
+    canvas.width = W;
+    canvas.height = totalH;
+
+    // 1. Draw Background Gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, W, totalH);
+    bgGrad.addColorStop(0, palette.bgStops[0]);
+    bgGrad.addColorStop(0.5, palette.bgStops[1]);
+    bgGrad.addColorStop(1, palette.bgStops[2]);
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, totalH);
+
+    // 2. Ambient Glows
+    const topGlow = ctx.createRadialGradient(W / 2, 160, 20, W / 2, 160, 560);
+    topGlow.addColorStop(0, palette.glowTop);
+    topGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = topGlow;
+    ctx.fillRect(0, 0, W, 750);
+
+    const botGlow = ctx.createRadialGradient(W / 2, totalH - 180, 20, W / 2, totalH - 180, 520);
+    botGlow.addColorStop(0, palette.glowBottom);
+    botGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = botGlow;
+    ctx.fillRect(0, totalH - 700, W, 700);
+
+    // 3. Double Ornamental Border Frame
+    ctx.save();
+    ctx.strokeStyle = palette.frameOuter;
+    ctx.lineWidth = 2.5;
+    drawRoundedRect(ctx, 34, 34, W - 68, totalH - 68, 36);
+    ctx.stroke();
+
+    ctx.strokeStyle = palette.frameInner;
+    ctx.lineWidth = 1.2;
+    drawRoundedRect(ctx, 48, 48, W - 96, totalH - 96, 26);
+    ctx.stroke();
+
+    // Corner diamond accents
+    const corners = [
+      [54, 54],
+      [W - 54, 54],
+      [54, totalH - 54],
+      [W - 54, totalH - 54]
+    ];
+    ctx.fillStyle = palette.accent;
+    for (const [cx, cy] of corners) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 6);
+      ctx.lineTo(cx + 6, cy);
+      ctx.lineTo(cx, cy + 6);
+      ctx.lineTo(cx - 6, cy);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 4. Header Emblem & Titles
+    drawFlyerEmblem(ctx, W / 2, 126, palette);
+
+    // Church / Top Tag
+    ctx.save();
+    ctx.fillStyle = palette.accent;
+    ctx.font = `800 22px ${fontStack}`;
+    ctx.textAlign = 'center';
+    ctx.letterSpacing = '3px';
+    ctx.fillText(churchText.toUpperCase(), W / 2, 214);
+    ctx.restore();
+
+    // Main Program Title
+    let mainTitle = 'PROGRAMA DE ALABANZA';
+    if (!isMulti) {
+      const singleId = preparedSections[0].id;
+      if (singleId === 'pl-servicio') mainTitle = 'SERVICIO DE CANTO';
+      else if (singleId === 'pl-culto') mainTitle = 'CULTO DE ADORACIÓN';
+      else if (singleId === 'pl-escuela') mainTitle = 'ESCUELA SABÁTICA';
+      else if (singleId === 'pl-santacena') mainTitle = 'SANTA CENA';
+    }
+
+    ctx.save();
+    ctx.fillStyle = palette.textPrimary;
+    ctx.font = `900 54px ${fontStack}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(mainTitle, W / 2, 276);
+    ctx.restore();
+
+    // Date Pill
+    const primaryDateStr = formatDisplayDate(preparedSections[0]?.date || activePl.date);
+    if (primaryDateStr) {
+      ctx.save();
+      ctx.font = `700 22px ${fontStack}`;
+      const dateText = `📅  ${primaryDateStr}`;
+      const pillW = Math.min(cardW, ctx.measureText(dateText).width + 56);
+      const pillX = (W - pillW) / 2;
+      const pillY = 298;
+      const pillH = 44;
+
+      ctx.fillStyle = palette.sectionBg;
+      ctx.strokeStyle = palette.cardBorder;
+      ctx.lineWidth = 1.5;
+      drawRoundedRect(ctx, pillX, pillY, pillW, pillH, 22);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = palette.textSecondary;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(dateText, W / 2, pillY + pillH / 2 + 1);
+      ctx.restore();
+    }
+
+    drawOrnamentalDivider(ctx, W / 2, 368, 360, palette);
+
+    // 5. Render Sections & Hymn Cards
+    let y = 398;
+
+    // Center vertically if few items so the flyer looks balanced
+    const contentSpan = cursorY - 395;
+    const availableSpan = totalH - 395 - footerHeight - (directorText ? 74 : 0);
+    if (contentSpan < availableSpan - 40) {
+      y += Math.floor((availableSpan - contentSpan) * 0.32);
+    }
+
+    for (const sec of preparedSections) {
+      if (isMulti) {
+        const secIcon =
+          sec.id === 'pl-servicio'
+            ? '🎤'
+            : sec.id === 'pl-escuela'
+            ? '📘'
+            : sec.id === 'pl-santacena'
+            ? '🍷'
+            : '⛪';
+        ctx.save();
+        ctx.fillStyle = palette.sectionBg;
+        ctx.strokeStyle = palette.cardBorder;
+        ctx.lineWidth = 1.5;
+        drawRoundedRect(ctx, cardX, y, cardW, 56, 16);
+        ctx.fill();
+        ctx.stroke();
+
+        // Left accent bar
+        ctx.fillStyle = palette.accent;
+        drawRoundedRect(ctx, cardX, y, 10, 56, 5);
+        ctx.fill();
+
+        ctx.fillStyle = palette.accentLight;
+        ctx.font = `800 26px ${fontStack}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${secIcon}  ${sec.name.toUpperCase()}`, cardX + 28, y + 29);
+
+        ctx.fillStyle = palette.textMuted;
+        ctx.font = `700 21px ${fontStack}`;
+        ctx.textAlign = 'right';
+        ctx.fillText(
+          `${sec.items.length} himno${sec.items.length === 1 ? '' : 's'}`,
+          cardX + cardW - 24,
+          y + 29
+        );
+        ctx.restore();
+        y += 72;
+      }
+
+      if (sec.items.length === 0) {
+        ctx.save();
+        ctx.fillStyle = palette.cardBg;
+        ctx.strokeStyle = palette.cardBorder;
+        ctx.lineWidth = 1.5;
+        drawRoundedRect(ctx, cardX, y, cardW, 130, 22);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = palette.textMuted;
+        ctx.font = `700 26px ${fontStack}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Agrega himnos a esta lista para verlos en el flyer', W / 2, y + 65);
+        ctx.restore();
+        y += 150;
+      } else {
+        for (const it of sec.items) {
+          ctx.save();
+          // Card shadow & background
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.22)';
+          ctx.shadowBlur = 18;
+          ctx.shadowOffsetY = 6;
+          ctx.fillStyle = palette.cardBg;
+          drawRoundedRect(ctx, cardX, y, cardW, it.cardH, 24);
+          ctx.fill();
+
+          ctx.shadowColor = 'transparent';
+          ctx.strokeStyle = palette.cardBorder;
+          ctx.lineWidth = 1.8;
+          ctx.stroke();
+
+          // Left Number Badge Box
+          const badgeW = 126;
+          const badgeH = it.cardH - 32;
+          const badgeX = cardX + 20;
+          const badgeY = y + 16;
+
+          const badgeGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH);
+          badgeGrad.addColorStop(0, palette.accent);
+          badgeGrad.addColorStop(1, palette.accentDark);
+          ctx.fillStyle = badgeGrad;
+          drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 18);
+          ctx.fill();
+
+          // Order label inside top of badge ("1° HIMNO")
+          ctx.fillStyle = palette.badgeText;
+          ctx.globalAlpha = 0.78;
+          ctx.font = `800 17px ${fontStack}`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'alphabetic';
+          ctx.fillText(`${it.order}° HIMNO`, badgeX + badgeW / 2, badgeY + badgeH / 2 - 14);
+
+          // Hymn Number ("#22")
+          ctx.globalAlpha = 1;
+          ctx.font = `900 ${String(it.num).length >= 3 ? 38 : 42}px ${fontStack}`;
+          ctx.fillText(`#${it.num}`, badgeX + badgeW / 2, badgeY + badgeH / 2 + 26);
+
+          // Right content area
+          const contentX = cardX + textLeftOffset;
+          let innerY = y + 24;
+
+          // Moment / Director Note Pill (if present)
+          if (it.noteStr) {
+            ctx.font = `800 20px ${fontStack}`;
+            const noteUpper = `✦  ${it.noteStr.toUpperCase()}`;
+            const noteW = Math.min(textMaxW, ctx.measureText(noteUpper).width + 28);
+            ctx.fillStyle = palette.notePillBg;
+            ctx.strokeStyle = palette.notePillBorder;
+            ctx.lineWidth = 1.2;
+            drawRoundedRect(ctx, contentX, innerY - 4, noteW, 32, 10);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = palette.notePillText;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(noteUpper, contentX + 14, innerY + 12, textMaxW - 24);
+            innerY += 40;
+          } else {
+            innerY += 6;
+          }
+
+          // Hymn Title Lines
+          ctx.fillStyle = palette.textPrimary;
+          ctx.font = `800 ${isMulti ? 30 : 34}px ${fontStack}`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+          const lineH = isMulti ? 36 : 40;
+          for (const line of it.titleLines) {
+            ctx.fillText(line, contentX, innerY);
+            innerY += lineH;
+          }
+
+          // Metadata Line (Category, Bible Ref, Stanzas)
+          if (it.metaLine) {
+            ctx.fillStyle = it.hasCustomStanzas ? palette.accentLight : palette.textSecondary;
+            ctx.font = `600 21px ${fontStack}`;
+            ctx.fillText(it.metaLine, contentX, innerY + 6, textMaxW);
+          }
+
+          ctx.restore();
+          y += it.cardH + (isMulti ? 18 : 22);
+        }
+      }
+
+      if (isMulti) {
+        y += 18;
+      }
+    }
+
+    // 6. Optional Director / Custom Footer Pill
+    if (directorText) {
+      ctx.save();
+      ctx.font = `700 24px ${fontStack}`;
+      const dirLabel = `🎵  ${directorText}`;
+      const dirW = Math.min(cardW, ctx.measureText(dirLabel).width + 56);
+      const dirX = (W - dirW) / 2;
+      const dirY = totalH - footerHeight - 58;
+
+      ctx.fillStyle = palette.cardBg;
+      ctx.strokeStyle = palette.frameOuter;
+      ctx.lineWidth = 1.5;
+      drawRoundedRect(ctx, dirX, dirY, dirW, 48, 24);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = palette.accentLight;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(dirLabel, W / 2, dirY + 25);
+      ctx.restore();
+    }
+
+    // 7. Footer Verse & Signature
+    const footerTopY = totalH - footerHeight + 12;
+    drawOrnamentalDivider(ctx, W / 2, footerTopY, 340, palette);
+
+    ctx.save();
+    ctx.fillStyle = palette.textSecondary;
+    ctx.font = `italic 600 22px ${fontStack}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      '“Cantad a Jehová cántico nuevo; cantad a Jehová, toda la tierra.” — Salmos 96:1',
+      W / 2,
+      footerTopY + 46
+    );
+
+    ctx.fillStyle = palette.accent;
+    ctx.font = `800 19px ${fontStack}`;
+    ctx.letterSpacing = '2px';
+    ctx.fillText('DIRECTOR DE CANTO  ·  HIMNARIO ADVENTISTA 2009', W / 2, footerTopY + 86);
+    ctx.restore();
+  }
+
+  function getFlyerFilename() {
+    const pl = getActivePlaylist();
+    const scopeName =
+      exportScope === 'all'
+        ? 'programa_alabanza'
+        : (pl.name || 'lista').toLowerCase().replace(/[^a-z0-9]+/gi, '_');
+    const dateSuffix = pl.date ? `_${pl.date}` : '';
+    return `flyer_${scopeName}${dateSuffix}.png`;
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('No se pudo generar la imagen.'));
+      }, 'image/png');
+    });
+  }
+
+  async function downloadFlyerImage() {
+    renderFlyerCanvas();
+    const canvas = document.getElementById('flyer-canvas');
+    if (!canvas) return;
+    try {
+      const blob = await canvasToBlob(canvas);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = getFlyerFilename();
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('¡Flyer descargado en alta calidad!');
+    } catch (e) {
+      showToast('Error al descargar la imagen');
+    }
+  }
+
+  async function shareFlyerImage() {
+    renderFlyerCanvas();
+    const canvas = document.getElementById('flyer-canvas');
+    if (!canvas) return;
+    try {
+      const blob = await canvasToBlob(canvas);
+      const filename = getFlyerFilename();
+      const file = new File([blob], filename, { type: 'image/png' });
+      const pl = getActivePlaylist();
+      const shareTitle =
+        exportScope === 'all' ? 'Programa de Alabanza' : `Lista de ${pl.name} · Himnario 2009`;
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: shareTitle,
+          text: `🎵 ${shareTitle}`,
+          files: [file]
+        });
+        return;
+      }
+      // Fallback: download the image if browser doesn't support native file sharing
+      await downloadFlyerImage();
+    } catch (err) {
+      if (err && err.name !== 'AbortError') {
+        await downloadFlyerImage();
+      }
+    }
+  }
+
+  async function copyFlyerImage() {
+    renderFlyerCanvas();
+    const canvas = document.getElementById('flyer-canvas');
+    if (!canvas) return;
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const blob = await canvasToBlob(canvas);
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        showToast('¡Imagen copiada! Ya puedes pegarla en WhatsApp');
+        return;
+      }
+      await downloadFlyerImage();
+    } catch (e) {
+      await downloadFlyerImage();
+    }
+  }
+
   function renderShareView() {
     updateGlobalBadges();
-    const singleTabSelector = document.getElementById('export-single-tab-selector');
-    if (singleTabSelector) {
-      singleTabSelector.style.display = exportScope === 'all' ? 'none' : 'grid';
+    document.querySelectorAll('.export-single-tab-selector').forEach((el) => {
+      el.style.display = exportScope === 'all' ? 'none' : 'grid';
+    });
+    document.querySelectorAll('[data-export-scope]').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-export-scope') === exportScope);
+    });
+    document.querySelectorAll('[data-flyer-theme]').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-flyer-theme') === state.flyerTheme);
+    });
+
+    const churchInput = document.getElementById('flyer-church-input');
+    if (churchInput && document.activeElement !== churchInput) {
+      churchInput.value = state.flyerChurch || '';
     }
-    document.getElementById('btn-export-scope-active')?.classList.toggle('active', exportScope === 'active');
-    document.getElementById('btn-export-scope-all')?.classList.toggle('active', exportScope === 'all');
+    const directorInput = document.getElementById('flyer-director-input');
+    if (directorInput && document.activeElement !== directorInput) {
+      directorInput.value = state.flyerDirector || '';
+    }
 
     const preview = document.getElementById('export-text-preview');
     if (preview) {
       preview.value = buildShareableMessage();
     }
+
+    renderFlyerCanvas();
   }
 
   function parseImportedData(rawInput) {
@@ -1363,6 +2128,17 @@
       switchView('view-reader');
     });
 
+    const btnGoFlyer = document.getElementById('btn-go-flyer');
+    if (btnGoFlyer) {
+      btnGoFlyer.addEventListener('click', () => {
+        switchView('view-share');
+        const flyerCard = document.getElementById('flyer-section-card');
+        if (flyerCard) {
+          flyerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
+
     document.getElementById('btn-go-share').addEventListener('click', () => {
       switchView('view-share');
     });
@@ -1573,6 +2349,47 @@
           renderShareView();
         }
       });
+    });
+
+    document.querySelectorAll('[data-flyer-theme]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const themeKey = btn.getAttribute('data-flyer-theme');
+        if (themeKey && FLYER_THEMES[themeKey]) {
+          state.flyerTheme = themeKey;
+          saveState();
+          renderShareView();
+        }
+      });
+    });
+
+    const churchInput = document.getElementById('flyer-church-input');
+    if (churchInput) {
+      churchInput.addEventListener('input', () => {
+        state.flyerChurch = churchInput.value;
+        saveState();
+        renderFlyerCanvas();
+      });
+    }
+
+    const directorInput = document.getElementById('flyer-director-input');
+    if (directorInput) {
+      directorInput.addEventListener('input', () => {
+        state.flyerDirector = directorInput.value;
+        saveState();
+        renderFlyerCanvas();
+      });
+    }
+
+    document.getElementById('btn-share-flyer')?.addEventListener('click', () => {
+      shareFlyerImage();
+    });
+
+    document.getElementById('btn-download-flyer')?.addEventListener('click', () => {
+      downloadFlyerImage();
+    });
+
+    document.getElementById('btn-copy-flyer')?.addEventListener('click', () => {
+      copyFlyerImage();
     });
 
     document.getElementById('btn-share-whatsapp').addEventListener('click', () => {

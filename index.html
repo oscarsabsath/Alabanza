@@ -132,6 +132,9 @@
           <button type="button" class="btn-primary" id="btn-start-pulpit">
             <span>🎤 Iniciar Modo Púlpito</span>
           </button>
+          <button type="button" class="btn-secondary btn-flyer-accent" id="btn-go-flyer">
+            <span>🖼️ Crear Flyer</span>
+          </button>
           <button type="button" class="btn-secondary" id="btn-go-share">
             <span>📤 Exportar</span>
           </button>
@@ -222,10 +225,106 @@
 
     <!-- VIEW 4: EXPORTAR E IMPORTAR LISTA -->
     <section id="view-share" class="view-section">
-      <!-- Export Card -->
-      <div class="share-card">
-        <h2>📤 Exportar para otro celular</h2>
-        <p>Elige si deseas exportar una sola lista o todas las listas juntas (Servicio, Culto, Escuela Sabática y Santa Cena):</p>
+      <!-- Flyer Image Generator Card -->
+      <div class="share-card flyer-generator-card" id="flyer-section-card">
+        <div class="flyer-card-header">
+          <div>
+            <h2>🖼️ Exportar Lista como Flyer (Imagen)</h2>
+            <p>Genera una imagen de alta calidad lista para enviar por WhatsApp, proyectar o publicar en el grupo de la iglesia:</p>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px">
+          <button type="button" class="chip-btn active" data-export-scope="active" style="justify-content:center">
+            <span>🎵 Pestaña Actual</span>
+          </button>
+          <button type="button" class="chip-btn" data-export-scope="all" style="justify-content:center">
+            <span>📦 Todas las Listas</span>
+          </button>
+        </div>
+
+        <div class="service-tabs-bar export-single-tab-selector" style="margin-bottom:12px">
+          <button type="button" class="service-tab-btn active" data-export-tab="pl-servicio">
+            <span>🎤 Servicio</span>
+          </button>
+          <button type="button" class="service-tab-btn" data-export-tab="pl-culto">
+            <span>⛪ Culto</span>
+          </button>
+          <button type="button" class="service-tab-btn" data-export-tab="pl-escuela">
+            <span>📘 Escuela Sabática</span>
+          </button>
+          <button type="button" class="service-tab-btn" data-export-tab="pl-santacena">
+            <span>🍷 Santa Cena</span>
+          </button>
+        </div>
+
+        <!-- Flyer Customization Controls -->
+        <div class="flyer-controls-grid">
+          <div class="flyer-field">
+            <label for="flyer-church-input">Iglesia / Encabezado (opcional)</label>
+            <input
+              type="text"
+              id="flyer-church-input"
+              class="text-input"
+              placeholder="Ej. Iglesia Adventista Central"
+              maxlength="60"
+            />
+          </div>
+          <div class="flyer-field">
+            <label for="flyer-director-input">Director(a) / Nota al pie (opcional)</label>
+            <input
+              type="text"
+              id="flyer-director-input"
+              class="text-input"
+              placeholder="Ej. Dirige: Ministerio de Alabanza"
+              maxlength="60"
+            />
+          </div>
+        </div>
+
+        <div class="flyer-themes-row" role="radiogroup" aria-label="Diseño del Flyer">
+          <span class="flyer-themes-label">Estilo visual:</span>
+          <button type="button" class="flyer-theme-chip active" data-flyer-theme="royal-gold">
+            <span class="theme-dot" style="background:linear-gradient(135deg,#0f172a,#f59e0b)"></span>
+            <span>Nocturno Dorado</span>
+          </button>
+          <button type="button" class="flyer-theme-chip" data-flyer-theme="classic-ivory">
+            <span class="theme-dot" style="background:linear-gradient(135deg,#fdfbf7,#b45309)"></span>
+            <span>Clásico Marfil</span>
+          </button>
+          <button type="button" class="flyer-theme-chip" data-flyer-theme="celestial-blue">
+            <span class="theme-dot" style="background:linear-gradient(135deg,#1e3a8a,#38bdf8)"></span>
+            <span>Azul Celestial</span>
+          </button>
+          <button type="button" class="flyer-theme-chip" data-flyer-theme="solemn-emerald">
+            <span class="theme-dot" style="background:linear-gradient(135deg,#064e3b,#fbbf24)"></span>
+            <span>Esmeralda Solemne</span>
+          </button>
+        </div>
+
+        <!-- Live Flyer Canvas Preview -->
+        <div class="flyer-preview-wrapper">
+          <canvas id="flyer-canvas" class="flyer-canvas" width="1080" height="1350"></canvas>
+        </div>
+
+        <!-- Flyer Export Buttons -->
+        <div class="share-actions-grid" style="margin-top:12px">
+          <button type="button" class="btn-primary whatsapp-btn" id="btn-share-flyer">
+            <span>📲 Compartir Flyer</span>
+          </button>
+          <button type="button" class="btn-primary" id="btn-download-flyer">
+            <span>💾 Descargar Imagen</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btn-copy-flyer">
+            <span>📋 Copiar Imagen</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Export Text/Code Card -->
+      <div class="share-card" id="export-text-card">
+        <h2>📤 Exportar texto y código para otro celular</h2>
+        <p>Envía el programa por texto junto con el código interactivo <code>HA09:...</code> para que otro director lo abra directo en su App:</p>
 
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px">
           <button type="button" class="chip-btn active" data-export-scope="active" id="btn-export-scope-active" style="justify-content:center">
@@ -236,7 +335,7 @@
           </button>
         </div>
 
-        <div class="service-tabs-bar" id="export-single-tab-selector" style="margin-bottom:12px">
+        <div class="service-tabs-bar export-single-tab-selector" id="export-single-tab-selector" style="margin-bottom:12px">
           <button type="button" class="service-tab-btn active" data-export-tab="pl-servicio">
             <span>🎤 Servicio</span>
           </button>
