@@ -225,9 +225,11 @@
         allLines.push(st.t);
       }
       const fullLyrics = allLines.join('\n');
+      const tagStr = Array.isArray(h.tags) && h.tags.includes('santacena') ? ' santa cena comunion rito humildad' : '';
       return {
         ...h,
         normTitle: normalizeText(h.t),
+        normCat: normalizeText((h.cat || '') + tagStr),
         normLyrics: normalizeText(fullLyrics),
         fullLyrics
       };
@@ -412,10 +414,12 @@
     const btnDiezmos = document.getElementById('btn-filter-diezmos');
     const btnApertura = document.getElementById('btn-filter-apertura');
     const btnClausura = document.getElementById('btn-filter-clausura');
+    const btnSantaCena = document.getElementById('btn-filter-santacena');
     if (btnOficiantes) btnOficiantes.classList.toggle('active', category === 'TAG:oficiantes');
     if (btnDiezmos) btnDiezmos.classList.toggle('active', category === 'TAG:diezmos');
     if (btnApertura) btnApertura.classList.toggle('active', category === 'TAG:apertura');
     if (btnClausura) btnClausura.classList.toggle('active', category === 'TAG:clausura');
+    if (btnSantaCena) btnSantaCena.classList.toggle('active', category === 'TAG:santacena' || category === 'Santa Cena');
 
     const servicioSet = new Set(getPlaylistById('pl-servicio').items.map((it) => it.n));
     const cultoSet = new Set(getPlaylistById('pl-culto').items.map((it) => it.n));
@@ -429,7 +433,10 @@
     const queryWords = normQuery ? normQuery.split(' ').filter(Boolean) : [];
 
     let filtered = HYMNS.filter((h) => {
-      if (category && category.startsWith('TAG:')) {
+      if (category === 'TAG:santacena' || category === 'Santa Cena') {
+        const isSc = h.cat === 'Santa Cena' || (Array.isArray(h.tags) && h.tags.includes('santacena'));
+        if (!isSc) return false;
+      } else if (category && category.startsWith('TAG:')) {
         const tag = category.slice(4);
         if (!Array.isArray(h.tags) || !h.tags.includes(tag)) return false;
       } else if (category && h.cat !== category) {
@@ -457,6 +464,7 @@
         (word) =>
           numStr === word ||
           h.normTitle.includes(word) ||
+          h.normCat.includes(word) ||
           h.normLyrics.includes(word)
       );
     });
@@ -561,13 +569,21 @@
         }
       }
 
+      const isSantaCenaHymn = h.cat === 'Santa Cena' || (Array.isArray(h.tags) && h.tags.includes('santacena'));
+      const catBadgeText =
+        h.cat === 'Santa Cena'
+          ? '🍷 Santa Cena'
+          : isSantaCenaHymn
+          ? `${h.cat} · 🍷 Santa Cena`
+          : h.cat;
+
       card.innerHTML = `
         <div class="hymn-card-left" data-open-hymn="${h.n}">
           <div class="hymn-num-badge">#${h.n}</div>
           <div class="hymn-info">
             <div class="hymn-title">${highlightedTitle} ${isFav ? '<span style="color:var(--accent)">★</span>' : ''}</div>
             <div class="hymn-sub">
-              <span>${escapeHtml(h.cat)}</span>
+              <span>${escapeHtml(catBadgeText)}</span>
               ${h.b ? `<span>· 📖 ${escapeHtml(h.b)}</span>` : ''}
             </div>
             ${snippetHtml}
@@ -2119,6 +2135,15 @@
       });
     }
 
+    const btnSantaCena = document.getElementById('btn-filter-santacena');
+    if (btnSantaCena) {
+      btnSantaCena.addEventListener('click', () => {
+        catSelect.value = catSelect.value === 'TAG:santacena' ? '' : 'TAG:santacena';
+        searchRenderLimit = 80;
+        renderSearchResults();
+      });
+    }
+
     const favFilterBtn = document.getElementById('btn-filter-favs');
     favFilterBtn.addEventListener('click', () => {
       filterFavoritesOnly = !filterFavoritesOnly;
@@ -2190,6 +2215,10 @@
     });
 
     document.getElementById('btn-add-more-hymns').addEventListener('click', () => {
+      if (state.activePlaylistId === 'pl-santacena') {
+        const catEl = document.getElementById('category-filter');
+        if (catEl) catEl.value = 'TAG:santacena';
+      }
       switchView('view-search');
       document.getElementById('search-input').focus();
     });
