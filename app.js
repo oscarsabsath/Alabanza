@@ -365,6 +365,10 @@
       tab.classList.toggle('active', tab.getAttribute('data-target') === targetId);
     });
 
+    if (targetId !== 'view-reader' && window.HA_MIDI_ENGINE) {
+      window.HA_MIDI_ENGINE.stopPlayback();
+    }
+
     if (targetId === 'view-search') {
       renderSearchResults();
     } else if (targetId === 'view-list') {
@@ -840,6 +844,11 @@
       noteBanner.textContent = noteParts.join('  ·  ');
     } else {
       noteBanner.style.display = 'none';
+    }
+
+    // Load hymn into MIDI 4-Voice (SATB) Coral Rehearsal Console
+    if (window.HA_MIDI_ENGINE) {
+      window.HA_MIDI_ENGINE.loadHymnIntoRehearsal(hymn);
     }
 
     // Render Stanzas and Chorus
@@ -2707,6 +2716,9 @@
   // Bootstrap application
   document.addEventListener('DOMContentLoaded', () => {
     bindEvents();
+    if (window.HA_MIDI_ENGINE) {
+      window.HA_MIDI_ENGINE.bindRehearsalEvents(showToast);
+    }
     registerServiceWorker();
     loadHymnsData();
   });

@@ -802,6 +802,276 @@ html, body {
   font-weight: 600;
 }
 
+/* MIDI 4-Voice (SATB) Coral Rehearsal Console */
+.midi-rehearsal-box {
+  margin-top: 14px;
+  padding: 13px;
+  border-radius: 14px;
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.midi-rehearsal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.midi-title-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.midi-title {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.midi-source-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.midi-file-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.mini-pill-btn {
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.midi-transport-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-midi-play {
+  min-width: 108px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: #0b1120;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .btn-midi-play {
+  color: #ffffff;
+}
+
+.btn-midi-play.playing {
+  background: var(--primary-blue);
+  color: #ffffff;
+}
+
+.midi-seek-slider {
+  flex: 1;
+  min-width: 70px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.midi-time-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.midi-mode-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.midi-mode-chip {
+  min-height: 34px;
+  padding: 4px 6px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.14s ease;
+}
+
+.midi-mode-chip.active {
+  background: var(--primary-blue-soft);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+
+.midi-voices-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+
+@media (min-width: 520px) {
+  .midi-voices-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.midi-voice-btn {
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  transition: all 0.14s ease;
+}
+
+.midi-voice-btn:active {
+  transform: scale(0.97);
+}
+
+.midi-voice-btn.voice-focused {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.midi-voice-btn.voice-active {
+  background: var(--success-soft);
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.midi-voice-btn.voice-muted {
+  opacity: 0.48;
+  background: var(--bg-card);
+  border-style: dashed;
+}
+
+.voice-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+
+.voice-name {
+  font-size: 0.81rem;
+  font-weight: 800;
+}
+
+.voice-note-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-muted);
+  min-width: 34px;
+  text-align: center;
+}
+
+.voice-note-pill.sounding {
+  background: var(--accent);
+  color: #0b1120;
+}
+
+[data-theme="light"] .voice-note-pill.sounding {
+  color: #ffffff;
+}
+
+.voice-sub {
+  font-size: 0.71rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.midi-params-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.midi-param-box {
+  flex: 1;
+  min-width: 155px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.param-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.param-val {
+  font-size: 0.79rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  min-width: 48px;
+  text-align: center;
+}
+
+.param-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Stanzas & Chorus */
 .lyrics-body {
   display: flex;

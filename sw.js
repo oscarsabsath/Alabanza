@@ -1,9 +1,10 @@
-const CACHE_NAME = 'himnario-2009-director-v8';
+const CACHE_NAME = 'himnario-2009-director-v9';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
+  './midi-engine.js',
   './himnos-data.js',
   './himnos.json',
   './manifest.json',
