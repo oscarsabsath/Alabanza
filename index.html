@@ -218,22 +218,32 @@
           </div>
           <div id="reader-director-note" class="director-note-banner" style="display:none"></div>
 
-          <!-- MIDI 4-Voice (SATB) Coral Rehearsal Studio -->
+          <!-- Official Audio (613 Hymns) & MIDI 4-Voice (SATB) Coral Rehearsal Studio -->
           <div class="midi-rehearsal-box" id="midi-rehearsal-box">
             <div class="midi-rehearsal-header">
               <div class="midi-title-group">
-                <span class="midi-title">🎹 Ensayo Coral · MIDI 4 Voces</span>
-                <span id="midi-source-badge" class="midi-source-badge">🎼 Partitura Coral SATB</span>
+                <span class="midi-title">🎹 Estudio de Ensayo</span>
+                <span id="midi-source-badge" class="midi-source-badge">🎧 Audio Coral Oficial (Himnario 2009)</span>
               </div>
               <div class="midi-file-actions">
                 <label class="mini-pill-btn" title="Subir archivo .mid para este himno">
-                  <span>📂 .MID</span>
+                  <span>📂 Subir .MID</span>
                   <input type="file" id="input-midi-file" accept=".mid,.midi,audio/midi" style="display:none" />
                 </label>
-                <button type="button" class="mini-pill-btn" id="btn-midi-download" title="Descargar pista MIDI de 4 voces (.mid)">
-                  <span>💾 .MID</span>
+                <button type="button" class="mini-pill-btn" id="btn-midi-download" title="Descargar pista (.mid / .mp3)">
+                  <span>💾 Descargar</span>
                 </button>
               </div>
+            </div>
+
+            <!-- Source Switcher: Official Recorded Audio (All 613 Hymns) vs 4-Voice MIDI Notes -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <button type="button" class="chip-btn active" data-engine-source="official-audio" style="justify-content:center">
+                <span>🎧 Audio Oficial (1–613)</span>
+              </button>
+              <button type="button" class="chip-btn" data-engine-source="midi-satb" style="justify-content:center">
+                <span>🎹 Voces MIDI (SATB)</span>
+              </button>
             </div>
 
             <!-- Transport Controls: Play/Pause, Stop, Seek Bar, Time -->
@@ -247,60 +257,74 @@
                 id="midi-seek-slider"
                 class="midi-seek-slider"
                 min="0"
-                max="32"
+                max="100"
                 step="0.25"
                 value="0"
-                aria-label="Progreso de la pista MIDI"
+                aria-label="Progreso de la pista"
               />
-              <span id="midi-time-label" class="midi-time-label">0:00 / 0:30</span>
+              <span id="midi-time-label" class="midi-time-label">0:00 / --:--</span>
             </div>
 
-            <!-- Rehearsal Mode Selector -->
-            <div class="midi-mode-row" role="radiogroup" aria-label="Modo de escucha de voces">
-              <button type="button" class="midi-mode-chip active" data-midi-mode="focus" title="Tu voz suena al 100% y las otras 3 voces suenan suaves de fondo (22%)">
-                <span>🎯 Destacar mi Voz</span>
-              </button>
-              <button type="button" class="midi-mode-chip" data-midi-mode="solo" title="Escuchar únicamente la voz seleccionada al 100%">
-                <span>🎧 Solo 1 Voz</span>
-              </button>
-              <button type="button" class="midi-mode-chip" data-midi-mode="mix" title="Encender o silenciar libremente cualquiera de las 4 voces">
-                <span>👥 Coro (Activar/Silenciar)</span>
+            <!-- Section A: Official Recorded Audio Info & Offline Download -->
+            <div id="official-audio-section" style="display:flex;flex-direction:column;gap:6px">
+              <button type="button" class="add-list-btn" id="btn-cache-official-audio" style="width:100%;min-height:36px">
+                <span>📥 Guardar Audio para usar Sin Internet</span>
               </button>
             </div>
 
-            <!-- 4 Voices Grid: Soprano, Contralto, Tenor, Bajo -->
-            <div class="midi-voices-grid">
-              <button type="button" class="midi-voice-btn voice-focused" data-midi-voice="S">
-                <div class="voice-top">
-                  <span class="voice-name">🎶 Soprano</span>
-                  <span class="voice-note-pill" id="midi-note-S">—</span>
-                </div>
-                <div class="voice-sub" id="midi-level-S">🎯 MI VOZ 100%</div>
-              </button>
+            <!-- Section B: MIDI 4-Voice SATB Selector -->
+            <div id="midi-satb-section" style="display:none;flex-direction:column;gap:8px">
+              <div id="midi-missing-notice" style="display:none;font-size:0.78rem;color:var(--accent);background:var(--accent-soft);padding:8px 10px;border-radius:9px">
+                💡 Este himno aún no tiene archivo <code>.mid</code> local cargado. Usa <strong>🎧 Audio Oficial (1–613)</strong> arriba para escucharlo completo, o toca <strong>📂 Subir .MID</strong> si tienes su partitura MIDI.
+              </div>
 
-              <button type="button" class="midi-voice-btn voice-active" data-midi-voice="A">
-                <div class="voice-top">
-                  <span class="voice-name">🎶 Contralto</span>
-                  <span class="voice-note-pill" id="midi-note-A">—</span>
-                </div>
-                <div class="voice-sub" id="midi-level-A">🔉 Fondo 22%</div>
-              </button>
+              <!-- Rehearsal Mode Selector -->
+              <div class="midi-mode-row" role="radiogroup" aria-label="Modo de escucha de voces">
+                <button type="button" class="midi-mode-chip active" data-midi-mode="focus" title="Tu voz suena al 100% y las otras 3 voces suenan suaves de fondo (22%)">
+                  <span>🎯 Destacar mi Voz</span>
+                </button>
+                <button type="button" class="midi-mode-chip" data-midi-mode="solo" title="Escuchar únicamente la voz seleccionada al 100%">
+                  <span>🎧 Solo 1 Voz</span>
+                </button>
+                <button type="button" class="midi-mode-chip" data-midi-mode="mix" title="Encender o silenciar libremente cualquiera de las 4 voces">
+                  <span>👥 Coro (Activar/Silenciar)</span>
+                </button>
+              </div>
 
-              <button type="button" class="midi-voice-btn voice-active" data-midi-voice="T">
-                <div class="voice-top">
-                  <span class="voice-name">🎶 Tenor</span>
-                  <span class="voice-note-pill" id="midi-note-T">—</span>
-                </div>
-                <div class="voice-sub" id="midi-level-T">🔉 Fondo 22%</div>
-              </button>
+              <!-- 4 Voices Grid: Soprano, Contralto, Tenor, Bajo -->
+              <div class="midi-voices-grid">
+                <button type="button" class="midi-voice-btn voice-focused" data-midi-voice="S">
+                  <div class="voice-top">
+                    <span class="voice-name">🎶 Soprano</span>
+                    <span class="voice-note-pill" id="midi-note-S">—</span>
+                  </div>
+                  <div class="voice-sub" id="midi-level-S">🎯 MI VOZ 100%</div>
+                </button>
 
-              <button type="button" class="midi-voice-btn voice-active" data-midi-voice="B">
-                <div class="voice-top">
-                  <span class="voice-name">🎶 Bajo</span>
-                  <span class="voice-note-pill" id="midi-note-B">—</span>
-                </div>
-                <div class="voice-sub" id="midi-level-B">🔉 Fondo 22%</div>
-              </button>
+                <button type="button" class="midi-voice-btn voice-active" data-midi-voice="A">
+                  <div class="voice-top">
+                    <span class="voice-name">🎶 Contralto</span>
+                    <span class="voice-note-pill" id="midi-note-A">—</span>
+                  </div>
+                  <div class="voice-sub" id="midi-level-A">🔉 Fondo 22%</div>
+                </button>
+
+                <button type="button" class="midi-voice-btn voice-active" data-midi-voice="T">
+                  <div class="voice-top">
+                    <span class="voice-name">🎶 Tenor</span>
+                    <span class="voice-note-pill" id="midi-note-T">—</span>
+                  </div>
+                  <div class="voice-sub" id="midi-level-T">🔉 Fondo 22%</div>
+                </button>
+
+                <button type="button" class="midi-voice-btn voice-active" data-midi-voice="B">
+                  <div class="voice-top">
+                    <span class="voice-name">🎶 Bajo</span>
+                    <span class="voice-note-pill" id="midi-note-B">—</span>
+                  </div>
+                  <div class="voice-sub" id="midi-level-B">🔉 Fondo 22%</div>
+                </button>
+              </div>
             </div>
 
             <!-- Tempo & Pitch Transpose Row -->
@@ -312,7 +336,7 @@
                 <button type="button" class="param-btn" id="btn-midi-tempo-inc">+</button>
               </div>
               <div class="midi-param-box">
-                <span class="param-label">🎹 Tono:</span>
+                <span class="param-label">🎹 Tono (MIDI):</span>
                 <button type="button" class="param-btn" id="btn-midi-trans-dec">−</button>
                 <strong id="midi-transpose-val" class="param-val">Original</strong>
                 <button type="button" class="param-btn" id="btn-midi-trans-inc">+</button>

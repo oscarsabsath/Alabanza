@@ -1,4 +1,4 @@
-const CACHE_NAME = 'himnario-2009-director-v9';
+const CACHE_NAME = 'himnario-2009-director-v10';
 const ASSETS = [
   './',
   './index.html',
@@ -23,7 +23,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key !== CACHE_NAME && key !== 'himnario-2009-official-audios-v1') {
             return caches.delete(key);
           }
         })
@@ -36,20 +36,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  // Network-first with offline cache fallback so installed mobile PWAs always get updates immediately
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && event.request.url.startsWith(self.location.origin)) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      })
+      .catch(() =>
+        caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+          return cachedResponse || caches.match('./index.html');
         })
-        .catch(() => caches.match('./index.html'));
-    })
+      )
   );
 });
