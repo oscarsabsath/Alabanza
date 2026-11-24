@@ -12572,10 +12572,10 @@
   },
   {
     "n": 585,
-    "t": "Loámoste, ¡oh Dios!",
-    "b": "",
+    "t": "De rodillas partimos hoy el pan",
+    "b": "1 Corintios 11:23-25",
     "cat": "Santa Cena",
-    "c": "Y contritos aquí,\nnos postramos ante ti;\nSeñor, escucha nuestra voz.",
+    "c": "Y contritos aquí, nos postramos ante ti;\nSeñor, escucha nuestra voz.",
     "s": [
       {
         "n": 1,
@@ -12591,7 +12591,6 @@
       }
     ],
     "tags": [
-      "oficiantes",
       "santacena"
     ]
   },
